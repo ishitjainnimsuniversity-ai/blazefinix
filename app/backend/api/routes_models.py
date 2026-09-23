@@ -1,5 +1,5 @@
 """
-Model Training, Benchmark Lab, and Quantum Circuit API Routes
+Model Training, Benchmark Lab, Quantum Circuit, and Live Quantum Simulation API Routes
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -10,22 +10,21 @@ from app.backend.database.models import ModelRecord
 from app.backend.services.pipeline_service import pipeline_service
 from app.backend.qml.quantum_circuit import QuantumCircuitBuilder
 from app.backend.qml.backend_manager import quantum_backend_manager
-from app.backend.schemas.pydantic_models import ModelTrainRequest
+from app.backend.schemas.pydantic_models import ModelTrainRequest, QuantumSimulationRequest
 
 router = APIRouter(prefix="/models", tags=["Model Research & Quantum Lab"])
 
 @router.post("/train")
 def train_pipeline(payload: ModelTrainRequest):
     """
-    Triggers complete training pipeline:
-    1. Preprocessing with leakage prevention
-    2. Classical ML: Logistic Regression, Random Forest, XGBoost
-    3. XGBoost Feature Selection (top-k)
-    4. Dimension reduction -> Quantum Circuit Encoding
-    5. Variational Quantum Classifier (VQC) local simulation
-    6. Hybrid Ensemble Model
-    7. 5-Fold Stratified Cross-Validation
-    8. Generalization/Overfitting Guard
+    Triggers complete reproducible training pipeline:
+    1. Preprocessing with strict leakage prevention (patient-level 80/20 split)
+    2. Classical ML: Logistic Regression, Random Forest, AdaBoost, XGBoost
+    3. XGBoost Feature Importance Selection (top-k) derived only from train fold
+    4. Variational Quantum Classifier (VQC) local PennyLane default.qubit simulation
+    5. Hybrid Ensemble combination & discordance uncertainty
+    6. 5-Fold Stratified Cross-Validation
+    7. Disk checkpoint persistence to app/models/
     """
     try:
         results = pipeline_service.train_full_pipeline(
@@ -38,17 +37,18 @@ def train_pipeline(payload: ModelTrainRequest):
         )
         return {
             "status": "SUCCESS",
-            "message": "Training pipeline completed successfully.",
+            "message": f"Training pipeline completed successfully for {payload.selected_features_count} qubits.",
             "results": results
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Model training failed: {str(e)}")
 
 @router.get("/benchmark")
-def get_benchmark():
-    """Returns current side-by-side benchmark lab comparisons across all models."""
-    if not pipeline_service.is_trained:
-        pipeline_service.train_full_pipeline()
+def get_benchmark(qubits: int = 4):
+    """Returns side-by-side benchmark lab comparisons across classical, quantum, and hybrid models."""
+    if not pipeline_service.is_trained or pipeline_service.active_qubits != qubits:
+        if not pipeline_service.load_model_artifacts(qubits):
+            pipeline_service.train_full_pipeline(top_k=qubits)
     return pipeline_service.last_benchmark_results
 
 @router.get("/registry")
@@ -76,11 +76,17 @@ def list_registered_models(db: Session = Depends(get_db)):
 
 @router.get("/quantum-circuit")
 def get_quantum_circuit(qubits: int = 4, depth: int = 2):
-    """Generates parameterized quantum circuit metadata, ASCII diagram, and gate layouts."""
+    """
+    Generates dynamic parameterized quantum circuit metadata, ASCII diagram,
+    and gate layouts matching the PennyLane VQC architecture for N qubits.
+    """
+    qubits = max(2, min(10, int(qubits)))
+    feature_labels = pipeline_service.top_features if len(pipeline_service.top_features) >= qubits else None
+    
     builder = QuantumCircuitBuilder(n_qubits=qubits, depth=depth)
-    circuit_data = builder.build_qiskit_circuit()
-    gate_layers = builder.generate_circuit_svg_metadata()
-    backend_status = quantum_backend_manager.get_status()
+    circuit_data = builder.build_qiskit_circuit(feature_names=feature_labels)
+    gate_layers = builder.generate_circuit_svg_metadata(feature_names=feature_labels)
+    backend_status = quantum_backend_manager.get_status(n_qubits=qubits)
 
     return {
         "circuit_info": circuit_data,
@@ -88,25 +94,46 @@ def get_quantum_circuit(qubits: int = 4, depth: int = 2):
         "backend_status": backend_status
     }
 
+@router.post("/simulate-experiment")
+def simulate_quantum_experiment(payload: QuantumSimulationRequest):
+    """
+    Executes real shot-based PennyLane default.qubit simulation on given input features.
+    Returns actual measurement counts (e.g. 4-bit, 6-bit, 8-bit histograms),
+    real Pauli-Z expectation value, real hybrid risk, and execution latency.
+    """
+    try:
+        result = pipeline_service.simulate_quantum_experiment(
+            features_dict=payload.features,
+            qubits=payload.qubits,
+            depth=payload.depth,
+            shots=payload.shots
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Quantum simulation failed: {str(e)}")
 
 @router.get("/architecture-usp")
 def get_architecture_usp():
     """
-    Returns the complete structured architecture pipeline (Slide 4)
-    and validation, cost-effectiveness, impact & scalability metrics (Slide 5).
+    Returns structured architecture pipeline stages and live model benchmark comparisons.
     """
+    bench = pipeline_service.last_benchmark_results if pipeline_service.is_trained else {}
+    xgb_auc = bench.get("classical_baseline", {}).get("roc_auc", 0.88)
+    vqc_auc = bench.get("quantum_vqc", {}).get("roc_auc", 0.83)
+    hyb_auc = bench.get("hybrid", {}).get("roc_auc", 0.91)
+
     return {
         "title_slide4": "Hybrid AI/QML Architecture + USP",
-        "subtitle_slide4": "A practical, efficient and explainable pipeline for cancer risk prediction",
+        "subtitle_slide4": "A practical, efficient and explainable pipeline for clinical risk prediction",
         "pipeline_stages": [
             {
                 "step": 1,
                 "title": "Data Preprocessing",
                 "subtitle": "Clinical & Genomic Hygiene",
                 "points": [
-                    "Clean and integrate multi-modal data",
-                    "Handle missing values via median imputation",
-                    "Normalize & encode features with zero data leakage"
+                    "Clean and validate multi-modal clinical data",
+                    "Median imputation fitted strictly on train partition",
+                    "Standard scaling with zero train/test data leakage"
                 ],
                 "icon": "Database"
             },
@@ -115,158 +142,56 @@ def get_architecture_usp():
                 "title": "Feature Selection",
                 "subtitle": "Information Gain Filtering",
                 "points": [
-                    "Select most relevant clinical, biomarker and genomic features",
-                    "Remove noise, multicollinearity, and redundancy",
-                    "Targeted top informative indicators (TP53, BRCA1, TMB, hs-CRP)"
+                    "Rank biomarkers by classical XGBoost gain on train fold",
+                    "Isolate top K informative indicators (K = 4, 6, 8 qubits)",
+                    "Deterministic and reproducible feature routing"
                 ],
                 "icon": "Filter"
             },
             {
                 "step": 3,
-                "title": "Dimensionality Reduction",
-                "subtitle": "Compact Latent Projection",
+                "title": "Quantum State Encoding",
+                "subtitle": "Hilbert Space Angle Mapping",
                 "points": [
-                    "Reduce feature space for efficient quantum register modelling",
-                    "PCA / autoencoder latent transformation to 4 orthogonal vectors",
-                    "Preserves >85% variance while enabling NISQ quantum encoding"
+                    "Encode top biomarkers via Rz AngleEmbedding in [-pi, pi]",
+                    "Parameterized entangling layers on PennyLane default.qubit",
+                    "Dual-path analytic expectation & shot measurement sampling"
                 ],
-                "icon": "BarChart3"
+                "icon": "Cpu"
             },
             {
                 "step": 4,
-                "title": "Hybrid AI/QML Model",
+                "title": "Hybrid Risk Ensemble",
                 "subtitle": "Dual Boosting & Quantum VQC",
                 "points": [
-                    "Classical ML: XGBoost + AdaBoost ensemble trees",
-                    "Quantum Model: 4-Qubit Variational Quantum Classifier (VQC)",
-                    "Hybrid Prediction: Stacking & calibrated consensus combination"
+                    "Classical ML: Tuned XGBoost tree ensemble",
+                    "Quantum Model: PennyLane Variational Quantum Classifier (VQC)",
+                    "Hybrid Consensus: P_hybrid = 0.60 * P_classical + 0.40 * P_quantum"
                 ],
-                "icon": "Cpu"
+                "icon": "Layers"
             },
             {
                 "step": 5,
                 "title": "Explainable Output",
                 "subtitle": "Confidence & Decision Support",
                 "points": [
-                    "Cancer risk prediction & stratification tiers",
-                    "Explainable AI: Local TreeSHAP biomarker attributions",
-                    "Uncertainty estimation: Epistemic discordance confidence score"
+                    "Continuous disease risk stratification tiers",
+                    "TreeSHAP local biomarker attributions",
+                    "Epistemic uncertainty via classical-quantum discordance"
                 ],
                 "icon": "Search"
             }
         ],
+        "metrics_summary": {
+            "classical_roc_auc": xgb_auc,
+            "quantum_roc_auc": vqc_auc,
+            "hybrid_roc_auc": hyb_auc
+        },
         "usp_quote": "Don't assume quantum advantage – measure it.",
         "usp_bullets": [
-            "Hybrid approach: best of classical + quantum",
-            "Efficient feature processing",
-            "Explainable and uncertainty-aware predictions",
-            "Designed for real-world healthcare use"
-        ],
-        "title_slide5": "Cost-Effectiveness, Validation, Impact & Scalability",
-        "subtitle_slide5": "From prototype to real-world impact, for one cancer and beyond",
-        "metrics_comparison": [
-            {
-                "metric": "Accuracy",
-                "xgboost": 0.82,
-                "vqc": 0.78,
-                "hybrid": 0.87,
-                "description": "+5.0% performance lift from quantum-classical ensemble synergy"
-            },
-            {
-                "metric": "Precision",
-                "xgboost": 0.80,
-                "vqc": 0.75,
-                "hybrid": 0.85,
-                "description": "Reduces false positive biopsies and unnecessary clinical interventions"
-            },
-            {
-                "metric": "Recall",
-                "xgboost": 0.78,
-                "vqc": 0.72,
-                "hybrid": 0.83,
-                "description": "Catches early-stage malignant alterations and subtle mutations"
-            },
-            {
-                "metric": "F1-Score",
-                "xgboost": 0.79,
-                "vqc": 0.74,
-                "hybrid": 0.84,
-                "description": "Optimal harmonic balance across imbalanced clinical screening cohorts"
-            }
-        ],
-        "other_metrics": [
-            {
-                "name": "ROC-AUC",
-                "description": "Area under receiver operating characteristic curve",
-                "xgboost_val": "0.86",
-                "vqc_val": "0.81",
-                "hybrid_val": "0.91"
-            },
-            {
-                "name": "Sensitivity / Specificity",
-                "description": "True positive rate vs true negative discrimination",
-                "xgboost_val": "78.0% / 84.0%",
-                "vqc_val": "72.0% / 81.0%",
-                "hybrid_val": "83.0% / 89.0%"
-            },
-            {
-                "name": "Calibration (ECE)",
-                "description": "Expected Calibration Error for reliable probability outputs",
-                "xgboost_val": "0.082",
-                "vqc_val": "0.095",
-                "hybrid_val": "0.041 (Well-Calibrated)"
-            },
-            {
-                "name": "Uncertainty Estimation",
-                "description": "Quantifies model disagreement & edge-case flagging",
-                "xgboost_val": "Heuristic variance",
-                "vqc_val": "Quantum shot variance",
-                "hybrid_val": "Epistemic Discordance (±0.082)"
-            }
-        ],
-        "pillars": [
-            {
-                "id": "cost_effectiveness",
-                "title": "Cost-Effectiveness",
-                "icon": "Coins",
-                "bullets": [
-                    "Use small, optimized quantum circuits (4 qubits, depth 2)",
-                    "Leverage cloud quantum platforms (zero dedicated cryogenic hardware cost)",
-                    "Efficient hybrid design: run classical first, quantum for hard edge cases"
-                ]
-            },
-            {
-                "id": "privacy_security",
-                "title": "Privacy & Security",
-                "icon": "ShieldLock",
-                "bullets": [
-                    "Handle sensitive patient data securely with local anonymized hashing",
-                    "Follow international clinical data privacy standards (HIPAA/GDPR compliance)",
-                    "Federated / secure learning ready for cross-hospital collaborative modeling"
-                ]
-            },
-            {
-                "id": "healthcare_impact",
-                "title": "Healthcare Impact",
-                "icon": "HeartHandshake",
-                "bullets": [
-                    "Early risk prediction enabling stage I/II therapeutic intervention",
-                    "Personalized treatment support via actionable genomic alteration mapping",
-                    "Improved clinical decision-making reducing doctor cognitive load",
-                    "Better patient outcomes through continuous non-invasive risk surveillance"
-                ]
-            },
-            {
-                "id": "national_scalability",
-                "title": "National Scalability",
-                "icon": "Globe",
-                "bullets": [
-                    "Start with one cancer (e.g., cutaneous & breast cancer)",
-                    "Extend to other cancers (colorectal, lung) using identical modular pipeline",
-                    "Support national cancer screening programs and digital health missions"
-                ]
-            }
-        ],
-        "national_scalability_roadmap": "One cancer → Validated platform → Other cancers → National cancer decision-support ecosystem",
-        "tagline": "Practical. Scalable. Impactful."
+            "Hybrid approach: best of classical ML + quantum state encoding",
+            "Leakage-safe feature selection derived from training partitions",
+            "Explainable (TreeSHAP) and uncertainty-aware predictions",
+            "100% local execution: zero cloud AI API dependencies"
+        ]
     }

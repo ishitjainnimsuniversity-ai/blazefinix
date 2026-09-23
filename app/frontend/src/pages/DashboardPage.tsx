@@ -2,14 +2,12 @@ import React, { useEffect, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
-  CheckCircle2,
-  Cpu,
   Users,
-  TrendingUp,
-  FileCheck,
   ChevronRight,
-  ShieldAlert,
-  ArrowUpRight
+  PlusCircle,
+  Stethoscope,
+  Clock,
+  ShieldCheck
 } from 'lucide-react';
 import { AnalyticsOverview, AlertData } from '../types';
 import { fetchAnalyticsOverview, fetchAlerts } from '../api';
@@ -19,12 +17,14 @@ interface DashboardPageProps {
   onNavigateToDecision: (recordId?: string) => void;
   onNavigateToAlerts: () => void;
   onNavigateToNewPrediction: () => void;
+  onNavigateToPatients: () => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   onNavigateToDecision,
   onNavigateToAlerts,
-  onNavigateToNewPrediction
+  onNavigateToNewPrediction,
+  onNavigateToPatients
 }) => {
   const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null);
   const [recentAlerts, setRecentAlerts] = useState<AlertData[]>([]);
@@ -50,144 +50,140 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Top Banner Disclaimer */}
+      {/* Top Banner Medical Disclaimer */}
       <MedicalDisclaimer />
 
-      {/* Hero Welcome & Quick Actions */}
-      <div className="glass-panel-elevated rounded-2xl p-5 sm:p-6 border border-slate-800 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 min-w-0">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              CLINICAL AI + QUANTUM SIMULATION
+      {/* Header Overview Banner */}
+      <div className="clinical-card p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="clinical-badge bg-teal-500/20 text-teal-300 border border-teal-500/30">
+              Clinical Decision Support
             </span>
-            <span className="text-xs text-slate-400">Offline-Capable Decision Support</span>
+            <span className="text-xs text-slate-400">Cardiometabolic & Oncology Stratification</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white mt-1.5 tracking-tight">
-            Early Disease-Risk Stratification Hub
+          <h1 className="text-xl font-bold text-white mt-1 tracking-tight">
+            Clinical Operations Overview
           </h1>
-          <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-            Hybrid architecture using XGBoost feature ranking to feed a Variational Quantum Classifier (VQC).
-            Outputs calibrated risk estimates, local SHAP biomarker attributions, and clinician alert triage.
+          <p className="text-xs text-slate-400 mt-1 max-w-2xl">
+            Real-time patient risk triage, unreviewed clinical alerts, and decision support pipeline.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0 w-full sm:w-auto">
+        <div className="flex items-center gap-3 w-full md:w-auto">
           <button
             onClick={onNavigateToNewPrediction}
-            className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/25 transition-all active:scale-95"
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold bg-teal-600 hover:bg-teal-500 text-white transition-colors"
           >
-            <span>Run New Patient Risk Assessment</span>
-            <ArrowUpRight className="w-4 h-4 shrink-0" />
+            <PlusCircle className="w-4 h-4" />
+            <span>New Patient Assessment</span>
           </button>
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 lg:gap-4">
-        {/* Card 1: Active Alerts */}
+      {/* Actionable Triage Summary Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Metric 1: Pending Alerts */}
         <div
           onClick={onNavigateToAlerts}
-          className="glass-panel rounded-xl p-5 border border-slate-800/80 hover:border-slate-700 transition-all cursor-pointer group"
+          className="clinical-card p-4 hover:border-slate-600 cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Active Review Alerts</span>
-            <div className="p-2 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Pending Alert Triage
+            </span>
+            <div className="p-1.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">
               <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
+          <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-bold text-white font-mono">
-              {analytics ? analytics.pending_doctor_reviews : '...'}
+              {analytics ? analytics.pending_doctor_reviews : '—'}
             </span>
-            <span className="text-xs text-rose-400 font-medium">pending clinician review</span>
+            <span className="text-xs text-rose-400 font-medium">unreviewed alerts</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500 flex items-center justify-between">
-            <span>Critical alerts: {analytics ? analytics.critical_alerts : 0}</span>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-white transition-colors" />
+          <div className="mt-2 text-[11px] text-slate-400 flex items-center justify-between pt-2 border-t border-slate-700/50">
+            <span>Critical severity: {analytics ? analytics.critical_alerts : 0}</span>
+            <span className="text-teal-400 group-hover:underline flex items-center gap-1 font-medium">
+              Review <ChevronRight className="w-3 h-3" />
+            </span>
           </div>
         </div>
 
-        {/* Card 2: Records Analyzed */}
-        <div className="glass-panel rounded-xl p-5 border border-slate-800/80">
+        {/* Metric 2: Active Cohort */}
+        <div
+          onClick={onNavigateToPatients}
+          className="clinical-card p-4 hover:border-slate-600 cursor-pointer group"
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Records Stratified</span>
-            <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Active Patient Directory
+            </span>
+            <div className="p-1.5 rounded bg-teal-500/10 text-teal-400 border border-teal-500/20">
               <Users className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
+          <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-bold text-white font-mono">
-              {analytics ? analytics.records_analyzed : '...'}
+              {analytics ? analytics.records_analyzed : '—'}
             </span>
-            <span className="text-xs text-indigo-400 font-medium">research patients</span>
+            <span className="text-xs text-teal-400 font-medium">cohort records</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500">
-            Cardiometabolic & Genomic cohorts
+          <div className="mt-2 text-[11px] text-slate-400 flex items-center justify-between pt-2 border-t border-slate-700/50">
+            <span>High Risk Cases: {analytics ? analytics.high_risk_cases : 0}</span>
+            <span className="text-teal-400 group-hover:underline flex items-center gap-1 font-medium">
+              View Directory <ChevronRight className="w-3 h-3" />
+            </span>
           </div>
         </div>
 
-        {/* Card 3: Quantum Runs */}
-        <div className="glass-panel rounded-xl p-5 border border-slate-800/80">
+        {/* Metric 3: System Status */}
+        <div className="clinical-card p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Quantum VQC Inferences</span>
-            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">
-              <Cpu className="w-4 h-4" />
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Decision Support Engine
+            </span>
+            <div className="p-1.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <ShieldCheck className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-white font-mono">
-              {analytics ? analytics.quantum_runs_executed : '...'}
-            </span>
-            <span className="text-xs text-purple-400 font-medium">circuit simulations</span>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-base font-bold text-emerald-400">OPERATIONAL</span>
+            <span className="text-xs text-slate-400">Hybrid Classical-Quantum</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500">
-            Qiskit Aer / PennyLane default.qubit
-          </div>
-        </div>
-
-        {/* Card 4: Doctor Agreement Rate */}
-        <div className="glass-panel rounded-xl p-5 border border-slate-800/80">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Doctor Agreement Rate</span>
-            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <FileCheck className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-white font-mono">
-              {analytics ? `${analytics.doctor_agreement_rate}%` : '92.5%'}
-            </span>
-            <span className="text-xs text-emerald-400 font-medium">clinical concurrence</span>
-          </div>
-          <div className="mt-2 text-[11px] text-slate-500">
-            Logged to separate research repository
+          <div className="mt-2 text-[11px] text-slate-400 pt-2 border-t border-slate-700/50 flex items-center justify-between">
+            <span>Model: Hybrid-VQC-v1.0</span>
+            <span className="font-mono text-emerald-400">Ready</span>
           </div>
         </div>
       </div>
 
-      {/* Alert Feed & Decision Support Spotlight */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Priority Clinical Alert Queue */}
-        <div className="xl:col-span-2 glass-panel-elevated rounded-2xl p-5 border border-slate-800 min-w-0">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+      {/* Main Content Grid: Triage Queue & Clinical Navigation */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Pending Alerts Triage Queue */}
+        <div className="lg:col-span-2 clinical-card p-5">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-700/80">
             <div>
-              <h2 className="text-base font-bold text-white">Priority Clinician Alert Queue</h2>
-              <p className="text-xs text-slate-400">
-                Patients meeting configured disease-risk review thresholds
+              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400" />
+                <span>Pending Clinical Triage Queue</span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Patients requiring clinician review and decision confirmation
               </p>
             </div>
             <button
               onClick={onNavigateToAlerts}
-              className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1"
+              className="text-xs text-teal-400 hover:text-teal-300 font-medium flex items-center gap-1"
             >
-              <span>View All Alerts</span>
+              <span>View All</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-2.5">
             {recentAlerts.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-500">
+              <div className="py-8 text-center text-xs text-slate-400">
                 No unacknowledged high-risk alerts at this time.
               </div>
             ) : (
@@ -195,45 +191,33 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 <div
                   key={alt.alert_id}
                   onClick={() => onNavigateToDecision(alt.record_id)}
-                  className="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-900 border border-slate-800/80 hover:border-slate-700 transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group"
+                  className="p-3 rounded-md bg-slate-900/90 border border-slate-700/80 hover:border-slate-600 transition-colors cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group"
                 >
                   <div className="flex items-start gap-3">
-                    <div
-                      className={`p-2 rounded-lg mt-0.5 ${
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase mt-0.5 ${
                         alt.severity === 'CRITICAL'
-                          ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
-                          : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                          : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                       }`}
                     >
-                      <ShieldAlert className="w-4 h-4" />
-                    </div>
+                      {alt.severity}
+                    </span>
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-white font-mono">{alt.record_id}</span>
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            alt.severity === 'CRITICAL'
-                              ? 'bg-rose-500/20 text-rose-300'
-                              : 'bg-amber-500/20 text-amber-300'
-                          }`}
-                        >
-                          {alt.severity}
-                        </span>
-                        <span className="text-[11px] text-slate-400 font-mono">
-                          Risk: {Math.round(alt.risk_score * 100)}%
+                        <span className="text-xs text-slate-300 font-mono">
+                          Risk Score: {(alt.risk_score * 100).toFixed(1)}%
                         </span>
                       </div>
-                      <p className="text-xs text-slate-300 mt-1 line-clamp-1">{alt.reason}</p>
-                      <div className="text-[11px] text-slate-500 mt-0.5">
-                        Key Biomarkers: {alt.contributing_factors?.slice(0, 3).join(', ') || 'N/A'}
-                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{alt.reason}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 sm:self-center self-end">
-                    <span className="text-xs font-medium text-indigo-400 group-hover:text-indigo-300 flex items-center gap-1">
-                      <span>Triage</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-2 self-end sm:self-center">
+                    <span className="text-xs font-medium text-teal-400 group-hover:underline flex items-center gap-1">
+                      <span>Open Assessment</span>
+                      <ChevronRight className="w-3 h-3" />
                     </span>
                   </div>
                 </div>
@@ -242,47 +226,60 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
         </div>
 
-        {/* Right 1 Col: Platform Methodology Summary */}
-        <div className="glass-panel-elevated rounded-2xl p-5 border border-slate-800 space-y-4">
-          <div className="pb-3 border-b border-slate-800">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-purple-400" />
-              <span>Compact QML Principle</span>
-            </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Engineering philosophy behind the hybrid pipeline
-            </p>
+        {/* Quick Workflow Navigation */}
+        <div className="clinical-card p-5 space-y-4">
+          <div className="pb-3 border-b border-slate-700/80">
+            <h2 className="text-sm font-bold text-white">Clinical Workflows</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Primary decision-support actions</p>
           </div>
 
-          <div className="space-y-3 text-xs text-slate-300">
-            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-              <div className="font-semibold text-white mb-1">1. Full Healthcare Space</div>
-              <p className="text-slate-400">
-                Classical XGBoost handles the high-dimensional medical records and isolates non-linear interactions.
-              </p>
-            </div>
+          <div className="space-y-2">
+            <button
+              onClick={onNavigateToNewPrediction}
+              className="w-full text-left p-3 rounded bg-slate-900 border border-slate-700/80 hover:border-slate-600 transition-colors flex items-center justify-between group"
+            >
+              <div>
+                <div className="text-xs font-bold text-white group-hover:text-teal-300 flex items-center gap-1.5">
+                  <PlusCircle className="w-3.5 h-3.5 text-teal-400" />
+                  New Assessment
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">
+                  Upload PDF report or enter biomarkers manually
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-teal-400" />
+            </button>
 
-            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-              <div className="font-semibold text-white mb-1">2. Top Important Features Only</div>
-              <p className="text-slate-400">
-                Only the 4 most informative biomarkers are mapped to the quantum register, preventing barren plateaus.
-              </p>
-            </div>
-
-            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-              <div className="font-semibold text-white mb-1">3. Calibrated Risk & Audit</div>
-              <p className="text-slate-400">
-                Hybrid predictions output risk probabilities rather than definitive diagnosis, preserving doctor authority.
-              </p>
-            </div>
-          </div>
-
-          <div className="pt-2">
             <button
               onClick={() => onNavigateToDecision()}
-              className="w-full py-2 px-3 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors text-center"
+              className="w-full text-left p-3 rounded bg-slate-900 border border-slate-700/80 hover:border-slate-600 transition-colors flex items-center justify-between group"
             >
-              Open Flagship Decision Support View
+              <div>
+                <div className="text-xs font-bold text-white group-hover:text-teal-300 flex items-center gap-1.5">
+                  <Stethoscope className="w-3.5 h-3.5 text-teal-400" />
+                  Decision Support Result
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">
+                  View risk stratification, SHAP drivers, & recommendations
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-teal-400" />
+            </button>
+
+            <button
+              onClick={onNavigateToPatients}
+              className="w-full text-left p-3 rounded bg-slate-900 border border-slate-700/80 hover:border-slate-600 transition-colors flex items-center justify-between group"
+            >
+              <div>
+                <div className="text-xs font-bold text-white group-hover:text-teal-300 flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-teal-400" />
+                  Cohort Directory
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">
+                  Browse past records, risk categories, and doctor sign-offs
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-teal-400" />
             </button>
           </div>
         </div>

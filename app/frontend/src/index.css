@@ -4,21 +4,33 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100;
+    @apply bg-slate-900 text-slate-100 font-sans antialiased selection:bg-teal-500/30 selection:text-teal-200;
   }
 }
 
-/* Custom subtle glassmorphism and clinical accents */
-.glass-panel {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Clinical Surface Utilities */
+.clinical-card {
+  @apply bg-slate-800/90 border border-slate-700/80 rounded-lg shadow-sm transition-all;
 }
 
-.glass-panel-elevated {
-  background: rgba(30, 41, 59, 0.65);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+.clinical-card-elevated {
+  @apply bg-slate-800 border border-slate-700 rounded-lg shadow-md;
+}
+
+.clinical-table-header {
+  @apply bg-slate-900/80 text-slate-400 font-medium text-xs uppercase tracking-wider border-b border-slate-700/80 px-4 py-3 text-left;
+}
+
+.clinical-table-cell {
+  @apply px-4 py-3.5 text-sm border-b border-slate-800/80 text-slate-200;
+}
+
+.clinical-badge {
+  @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide;
+}
+
+.demo-data-banner {
+  @apply bg-amber-500/10 border border-amber-500/30 text-amber-300 px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-2;
 }
 
 /* Custom scrollbars */
@@ -32,10 +44,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.4);
+  background: rgba(71, 85, 105, 0.5);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.7);
+  background: rgba(100, 116, 139, 0.8);
 }

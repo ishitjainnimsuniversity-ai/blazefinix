@@ -485,7 +485,7 @@ export const UserGuidePage: React.FC = () => {
                       <li>Full Ensembl genomic coordinate breakdown & canonical transcripts</li>
                       <li>cBioPortal driver mutations catalog (protein changes, locus, mutation types)</li>
                       <li>Dual boosting (XGBoost + AdaBoost) feature importance attributions</li>
-                      <li>4-Qubit VQC expectation value, state fidelity, and entanglement entropy</li>
+                      <li>4-Qubit VQC expectation value and PennyLane shot measurement telemetry</li>
                       <li>Specific clinical recommendations and treatment directives</li>
                     </ul>
                   </div>

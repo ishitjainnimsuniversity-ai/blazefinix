@@ -186,52 +186,9 @@ export const CancerGenomicsPage: React.FC = () => {
         evalSection.scrollIntoView({ behavior: 'smooth' });
       }
     } catch (err: any) {
-      console.warn('Cancer evaluation fallback applied:', err);
-      // Construct verified fallback result so user is never blocked
-      const fallbackResult = {
-        patient_id: payload.patient_id || 'TCGA-BH-A0B2',
-        cancer_key: payload.cancer_key || 'breast',
-        cancer_name: payload.cancer_name || 'Breast Invasive Carcinoma',
-        project_id: payload.project_id || 'TCGA-BRCA',
-        study_id: payload.study_id || 'brca_tcga_pan_can_atlas_2018',
-        gender: payload.gender || 'female',
-        age: payload.age || 58,
-        stage: payload.stage || 'Stage IIA',
-        driver_mutations: payload.driver_mutations || ['TP53', 'BRCA1'],
-        hybrid_risk_score: 0.6850,
-        risk_tier: 'HIGH RISK',
-        risk_color: '#F97316',
-        recommendation: 'Comprehensive germline and somatic genetic testing, target molecular therapy profiling, and 3-week clinical follow-up.',
-        classical_breakdown: {
-          xgboost_prob: 0.6720,
-          confidence_lower: 0.5920,
-          confidence_upper: 0.7520,
-          top_attributions: [
-            `Tumor Stage (${payload.stage || 'Stage IIA'}): +0.28`,
-            `Driver Mutations (${(payload.driver_mutations || ['TP53', 'BRCA1']).join(', ')}): +0.22`,
-            `Patient Age (${payload.age || 58}y): +0.12`
-          ]
-        },
-        quantum_metrics: {
-          vqc_expectation: 0.7045,
-          qubits_utilized: 4,
-          circuit_depth: 6,
-          state_fidelity: 0.9982,
-          entanglement_entropy: 0.8412,
-          bloch_angles: [
-            { qubit: 0, theta: 1.42, phi: 0.81 },
-            { qubit: 1, theta: 2.15, phi: 1.34 },
-            { qubit: 2, theta: 0.98, phi: 2.05 },
-            { qubit: 3, theta: 1.87, phi: 0.45 }
-          ]
-        },
-        medical_disclaimer: 'AI-generated risk assessment — not a final medical diagnosis. Final clinical decision remains with a qualified healthcare professional.'
-      };
-      setEvaluationResult(fallbackResult);
-      const evalSection = document.getElementById('evaluation-dashboard');
-      if (evalSection) {
-        evalSection.scrollIntoView({ behavior: 'smooth' });
-      }
+      console.error('Cancer evaluation failed:', err);
+      setEvaluationResult(null);
+      alert('LOCAL COMPUTATION OFFLINE — Backend at http://localhost:8000 is unreachable. No fake predictions will be generated.');
     } finally {
       setIsEvaluating(false);
     }
@@ -1031,7 +988,7 @@ export const CancerGenomicsPage: React.FC = () => {
                   {(evaluationResult.quantum_metrics?.vqc_expectation * 100).toFixed(1)}%
                 </div>
                 <div className="text-[11px] text-slate-400 mt-1">
-                  Fidelity: {evaluationResult.quantum_metrics?.state_fidelity}
+                  PennyLane default.qubit
                 </div>
               </div>
             </div>

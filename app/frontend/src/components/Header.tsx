@@ -1,79 +1,78 @@
 import React from 'react';
-import { Cpu, Bell, Activity, PlayCircle, ShieldCheck, QrCode } from 'lucide-react';
+import { Cpu, Bell, Activity, User } from 'lucide-react';
 
 interface HeaderProps {
   activeModelVersion?: string;
   pendingAlertsCount: number;
-  onRunDemo: () => void;
-  isDemoRunning?: boolean;
-  onOpenQr?: () => void;
+  selectedRecordId?: string;
+  onNavigateToAlerts?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   activeModelVersion = 'Hybrid-VQC-v1.0',
   pendingAlertsCount,
-  onRunDemo,
-  isDemoRunning = false,
-  onOpenQr
+  selectedRecordId,
+  onNavigateToAlerts
 }) => {
   return (
-    <header className="h-16 px-6 glass-panel border-b border-slate-800/80 flex items-center justify-between sticky top-0 z-30">
+    <header className="h-14 px-6 bg-slate-900 border-b border-slate-800 flex items-center justify-between sticky top-0 z-30 shrink-0">
+      {/* Left: Active Context & Patient Indicator */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-medium text-slate-300 tracking-wider">SYSTEM MODE:</span>
-          <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            OFFLINE SIMULATOR
-          </span>
-        </div>
+        {selectedRecordId ? (
+          <div className="flex items-center gap-2 px-3 py-1 rounded bg-teal-500/10 border border-teal-500/30 text-xs">
+            <User className="w-3.5 h-3.5 text-teal-400" />
+            <span className="text-slate-400">Active Patient:</span>
+            <span className="font-mono font-semibold text-teal-300">{selectedRecordId}</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-xs text-slate-400">
+            <Activity className="w-3.5 h-3.5 text-teal-400" />
+            <span className="font-medium text-slate-300">BlazeFinix Decision Support</span>
+          </div>
+        )}
 
         <div className="hidden md:flex items-center gap-2 pl-4 border-l border-slate-800 text-xs text-slate-400">
-          <Cpu className="w-3.5 h-3.5 text-indigo-400" />
-          <span>Active Pipeline:</span>
-          <span className="font-mono text-indigo-300 font-medium">{activeModelVersion}</span>
+          <Cpu className="w-3.5 h-3.5 text-slate-400" />
+          <span>Engine:</span>
+          <span className="font-mono text-slate-300 font-medium">{activeModelVersion}</span>
         </div>
       </div>
 
+      {/* Right: Operational Status, Alerts, Attending User */}
       <div className="flex items-center gap-3">
-        {/* Permanent Mobile QR Button */}
-        {onOpenQr && (
-          <button
-            onClick={onOpenQr}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 shadow-sm transition-all animate-pulse hover:animate-none"
-            title="Scan Permanent 24/7 Mobile QR Code"
-          >
-            <QrCode className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">24/7 Mobile QR</span>
-          </button>
-        )}
+        {/* Research Disclaimer Pill */}
+        <div className="hidden sm:inline-flex items-center px-2.5 py-1 rounded text-[11px] font-medium bg-slate-800 text-slate-400 border border-slate-700">
+          Research Prototype — Decision Support Only
+        </div>
 
-        {/* Full Demo Trigger Button */}
+        {/* System Backend Status */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs bg-slate-800/80 border border-slate-700 text-slate-300">
+          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span className="text-[11px] font-medium">Backend Online</span>
+        </div>
+
+        {/* Alerts Center Notification Button */}
         <button
-          onClick={onRunDemo}
-          disabled={isDemoRunning}
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white transition-all shadow-sm hover:shadow-indigo-500/25 active:scale-95"
+          onClick={onNavigateToAlerts}
+          className="relative p-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+          title="View Alerts & Triage Queue"
         >
-          <PlayCircle className={`w-4 h-4 ${isDemoRunning ? 'animate-spin' : ''}`} />
-          <span>{isDemoRunning ? 'Executing Demo Pipeline...' : 'Run Full Pipeline Demo'}</span>
-        </button>
-
-        {/* Alerts Notification Badge */}
-        <div className="relative p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer">
           <Bell className="w-4 h-4" />
           {pendingAlertsCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm">
               {pendingAlertsCount}
             </span>
           )}
-        </div>
+        </button>
 
+        {/* Physician Profile */}
         <div className="flex items-center gap-2 pl-3 border-l border-slate-800">
-          <div className="w-7 h-7 rounded-full bg-indigo-950/80 border border-indigo-500/30 flex items-center justify-center text-indigo-300 text-xs font-bold">
+          <div className="w-7 h-7 rounded bg-teal-600/20 border border-teal-500/30 flex items-center justify-center text-teal-300 text-xs font-bold font-mono">
             MD
           </div>
           <div className="hidden lg:block text-left">
             <div className="text-xs font-medium text-slate-200">Clinical Attending</div>
-            <div className="text-[10px] text-slate-500">Research & Triage</div>
+            <div className="text-[10px] text-slate-400">Cardiometabolic & Oncology</div>
           </div>
         </div>
       </div>

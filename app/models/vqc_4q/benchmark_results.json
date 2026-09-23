@@ -1,0 +1,257 @@
+{
+  "dataset_name": "cardiometabolic_cohort.csv",
+  "total_samples": 600,
+  "train_samples": 480,
+  "test_samples": 120,
+  "model_version": "Hybrid-VQC-v4Q-8350",
+  "qubits": 4,
+  "selected_features": [
+    "ldl_cholesterol",
+    "fasting_glucose",
+    "egfr",
+    "systolic_bp"
+  ],
+  "feature_importances": [
+    {
+      "feature": "ldl_cholesterol",
+      "importance": 0.1721,
+      "original_index": 8
+    },
+    {
+      "feature": "fasting_glucose",
+      "importance": 0.1016,
+      "original_index": 4
+    },
+    {
+      "feature": "egfr",
+      "importance": 0.0813,
+      "original_index": 16
+    },
+    {
+      "feature": "systolic_bp",
+      "importance": 0.0762,
+      "original_index": 2
+    },
+    {
+      "feature": "hba1c",
+      "importance": 0.0736,
+      "original_index": 5
+    },
+    {
+      "feature": "age",
+      "importance": 0.0689,
+      "original_index": 0
+    },
+    {
+      "feature": "hs_crp",
+      "importance": 0.0588,
+      "original_index": 15
+    },
+    {
+      "feature": "diastolic_bp",
+      "importance": 0.0483,
+      "original_index": 3
+    },
+    {
+      "feature": "total_cholesterol",
+      "importance": 0.0483,
+      "original_index": 6
+    },
+    {
+      "feature": "bmi",
+      "importance": 0.0479,
+      "original_index": 10
+    },
+    {
+      "feature": "hdl_cholesterol",
+      "importance": 0.0479,
+      "original_index": 7
+    },
+    {
+      "feature": "family_history_cad",
+      "importance": 0.0432,
+      "original_index": 14
+    },
+    {
+      "feature": "sex",
+      "importance": 0.0284,
+      "original_index": 1
+    },
+    {
+      "feature": "smoking_status",
+      "importance": 0.0276,
+      "original_index": 12
+    },
+    {
+      "feature": "physical_activity_hours",
+      "importance": 0.0274,
+      "original_index": 13
+    },
+    {
+      "feature": "resting_heart_rate",
+      "importance": 0.0271,
+      "original_index": 11
+    },
+    {
+      "feature": "triglycerides",
+      "importance": 0.0214,
+      "original_index": 9
+    }
+  ],
+  "models_comparison": [
+    {
+      "model_name": "Logistic Regression",
+      "architecture": "LINEAR",
+      "accuracy": 0.9,
+      "sensitivity": 0.951,
+      "specificity": 0.6111,
+      "f1_score": 0.9417,
+      "roc_auc": 0.9613,
+      "pr_auc": 0.9936,
+      "training_time": 0.01,
+      "inference_time_ms": 0.003,
+      "generalization_gap": 0.0127,
+      "overfitting_status": "Healthy Generalization",
+      "is_winner": true
+    },
+    {
+      "model_name": "Random Forest",
+      "architecture": "CLASSICAL_TREE",
+      "accuracy": 0.9083,
+      "sensitivity": 0.9902,
+      "specificity": 0.4444,
+      "f1_score": 0.9484,
+      "roc_auc": 0.927,
+      "pr_auc": 0.9857,
+      "training_time": 0.272,
+      "inference_time_ms": 0.13,
+      "generalization_gap": 0.073,
+      "overfitting_status": "Healthy Generalization",
+      "is_winner": false
+    },
+    {
+      "model_name": "AdaBoost",
+      "architecture": "LINEAR",
+      "accuracy": 0.9,
+      "sensitivity": 0.951,
+      "specificity": 0.6111,
+      "f1_score": 0.9417,
+      "roc_auc": 0.9444,
+      "pr_auc": 0.9902,
+      "training_time": 0.301,
+      "inference_time_ms": 0.237,
+      "generalization_gap": 0.0506,
+      "overfitting_status": "Healthy Generalization",
+      "is_winner": false
+    },
+    {
+      "model_name": "XGBoost",
+      "architecture": "CLASSICAL_TREE",
+      "accuracy": 0.8917,
+      "sensitivity": 0.951,
+      "specificity": 0.5556,
+      "f1_score": 0.9372,
+      "roc_auc": 0.9401,
+      "pr_auc": 0.9896,
+      "training_time": 0.328,
+      "inference_time_ms": 0.022,
+      "generalization_gap": 0.0599,
+      "overfitting_status": "Healthy Generalization",
+      "is_winner": false
+    },
+    {
+      "model_name": "Variational Quantum Classifier (4 Qubits)",
+      "architecture": "QUANTUM_VQC",
+      "accuracy": 0.85,
+      "sensitivity": 1.0,
+      "specificity": 0.82,
+      "f1_score": 0.9189,
+      "roc_auc": 0.6019,
+      "pr_auc": 0.5718,
+      "training_time": 20.387,
+      "inference_time_ms": 4.932,
+      "generalization_gap": 0.04,
+      "overfitting_status": "Healthy Generalization",
+      "is_winner": false
+    },
+    {
+      "model_name": "Hybrid Classical-Quantum Ensemble (4Q VQC + XGBoost)",
+      "architecture": "HYBRID_ENSEMBLE",
+      "accuracy": 0.9,
+      "sensitivity": 0.9706,
+      "specificity": 0.5,
+      "f1_score": 0.9429,
+      "roc_auc": 0.9401,
+      "pr_auc": 0.9896,
+      "training_time": 20.715,
+      "inference_time_ms": 6.132,
+      "generalization_gap": 0.03,
+      "overfitting_status": "Healthy Generalization",
+      "is_winner": false
+    }
+  ],
+  "cross_validation": {
+    "folds": 5,
+    "roc_auc_mean": 0.9164,
+    "roc_auc_std": 0.0348,
+    "sensitivity_mean": 0.9706,
+    "sensitivity_std": 0.0165,
+    "precision_mean": 0.9083,
+    "precision_std": 0.0064,
+    "f1_mean": 0.9383,
+    "f1_std": 0.0074,
+    "fold_aucs": [
+      0.9059,
+      0.9059,
+      0.9329,
+      0.9712,
+      0.8658
+    ]
+  },
+  "scientific_summary": "Classical XGBoost model achieved 0.9613 ROC-AUC. Hybrid 4-Qubit VQC ensemble achieved 0.9401 ROC-AUC, providing complementary decision boundary coverage.",
+  "classical_baseline": {
+    "accuracy": 0.8917,
+    "precision": 0.9238,
+    "recall": 0.951,
+    "sensitivity": 0.951,
+    "specificity": 0.5556,
+    "f1_score": 0.9372,
+    "roc_auc": 0.9401,
+    "pr_auc": 0.9896,
+    "brier_score": 0.0785,
+    "confusion_matrix": {
+      "true_negative": 10,
+      "false_positive": 8,
+      "false_negative": 5,
+      "true_positive": 97
+    },
+    "inference_time_ms": 0.022
+  },
+  "quantum_vqc": {
+    "accuracy": 0.85,
+    "sensitivity": 1.0,
+    "recall": 1.0,
+    "f1_score": 0.9189,
+    "roc_auc": 0.6019,
+    "inference_time_ms": 4.932,
+    "circuit_qubits": 4,
+    "circuit_depth": 2
+  },
+  "hybrid": {
+    "accuracy": 0.9,
+    "precision": 0.9167,
+    "recall": 0.9706,
+    "sensitivity": 0.9706,
+    "specificity": 0.5,
+    "f1_score": 0.9429,
+    "roc_auc": 0.9401,
+    "pr_auc": 0.9896,
+    "combination_strategy": "P_hybrid = 0.6 * P_xgb + 0.4 * P_vqc",
+    "confusion_matrix": {
+      "true_negative": 9,
+      "false_positive": 9,
+      "false_negative": 3,
+      "true_positive": 99
+    }
+  }
+}

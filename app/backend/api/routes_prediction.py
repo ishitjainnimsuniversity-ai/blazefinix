@@ -1,5 +1,6 @@
 """
 Prediction & Clinical Inference API Routes
+Executes genuine classical ML (XGBoost) + PennyLane VQC quantum simulation + TreeSHAP explainability.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -126,12 +127,20 @@ def get_demo_cases():
 @router.post("")
 def predict_risk(payload: PredictionRequest, db: Session = Depends(get_db)):
     """
-    Executes hybrid classical-quantum prediction, computes SHAP attributions,
-    evaluates safety thresholds, and creates alerts if thresholds are met.
+    Executes hybrid classical-quantum prediction, computes TreeSHAP attributions,
+    runs real PennyLane shot measurements, evaluates safety thresholds, and creates alerts.
     """
     try:
         rec_id = payload.record_id or f"R-{uuid.uuid4().hex[:6].upper()}"
-        result = pipeline_service.predict_patient(payload.features, record_id=rec_id)
+        qubits = payload.qubits or (payload.quantum_config.qubits if payload.quantum_config else None)
+        shots = payload.shots or (payload.quantum_config.shots if payload.quantum_config else 1024)
+
+        result = pipeline_service.predict_patient(
+            features_dict=payload.features,
+            record_id=rec_id,
+            qubits=qubits,
+            shots=shots
+        )
 
         # 1. Store or update patient record
         patient = db.query(PatientRecord).filter(PatientRecord.record_id == rec_id).first()
@@ -190,7 +199,8 @@ def predict_risk(payload: PredictionRequest, db: Session = Depends(get_db)):
             details_json=json.dumps({
                 "hybrid_risk": result["hybrid_risk"],
                 "risk_category": result["risk_category"],
-                "alert_triggered": bool(alert_info)
+                "alert_triggered": bool(alert_info),
+                "qubits": result.get("quantum_telemetry", {}).get("qubits", 4)
             })
         ))
 
@@ -208,6 +218,8 @@ def predict_risk(payload: PredictionRequest, db: Session = Depends(get_db)):
             "uncertainty_score": result["uncertainty_score"],
             "contributing_factors": result["contributing_factors"],
             "explanation_summary": result["explanation_summary"],
+            "quantum_telemetry": result.get("quantum_telemetry"),
+            "provenance": result.get("provenance"),
             "alert": alert_info,
             "recommendation": result["recommendation"],
             "disclaimer": result["disclaimer"],

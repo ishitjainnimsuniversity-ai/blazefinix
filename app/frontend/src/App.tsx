@@ -5,32 +5,25 @@ import { DashboardPage } from './pages/DashboardPage';
 import { ClinicalDecisionPage } from './pages/ClinicalDecisionPage';
 import { ModelLabPage } from './pages/ModelLabPage';
 import { QuantumLabPage } from './pages/QuantumLabPage';
-import { DataQualityPage } from './pages/DataQualityPage';
 import { AlertsPage } from './pages/AlertsPage';
-import { DoctorReviewPage } from './pages/DoctorReviewPage';
 import { NewPredictionPage } from './pages/NewPredictionPage';
 import { PatientRecordsPage } from './pages/PatientRecordsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { VisionDermPage } from './pages/VisionDermPage';
-import { ArchitectureUspPage } from './pages/ArchitectureUspPage';
 import { CancerGenomicsPage } from './pages/CancerGenomicsPage';
-import { UserGuidePage } from './pages/UserGuidePage';
-import { PatientReportUploaderPage } from './pages/PatientReportUploaderPage';
 import { PermanentQrModal } from './components/PermanentQrModal';
-import { fetchAlerts, fetchDemoCases, predictPatientRisk } from './api';
+import { fetchAlerts } from './api';
 import { PredictionResult } from './types';
 
 export const App: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
+  const [currentTab, setCurrentTab] = useState<NavTab>('overview');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false);
   const [pendingAlertsCount, setPendingAlertsCount] = useState<number>(0);
   const [activeModelVersion, setActiveModelVersion] = useState<string>('Hybrid-VQC-v1.0');
   const [selectedRecordId, setSelectedRecordId] = useState<string | undefined>(undefined);
-  const [isDemoRunning, setIsDemoRunning] = useState<boolean>(false);
-  const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     refreshAlertCount();
@@ -47,30 +40,6 @@ export const App: React.FC = () => {
     }
   }
 
-  // 1-Click "Run Full Pipeline Demo" runner
-  async function handleRunFullDemo() {
-    setIsDemoRunning(true);
-    try {
-      const demoCases = await fetchDemoCases();
-      const highRiskCase = demoCases.find((c) => c.case_id.includes('HIGH')) || demoCases[0];
-
-      // Execute actual prediction
-      const result = await predictPatientRisk(highRiskCase.features, highRiskCase.case_id);
-      setActiveModelVersion(result.model_version);
-      setSelectedRecordId(result.record_id);
-
-      // Refresh alerts
-      await refreshAlertCount();
-
-      // Navigate directly to flagship decision support screen to show the result
-      setCurrentTab('decision_support');
-    } catch (err) {
-      console.error('Demo execution failed:', err);
-    } finally {
-      setIsDemoRunning(false);
-    }
-  }
-
   function handleNavigateToDecision(recordId?: string) {
     if (recordId) setSelectedRecordId(recordId);
     setCurrentTab('decision_support');
@@ -84,7 +53,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-100 font-sans">
+    <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-900 font-sans">
       {/* Sidebar Navigation */}
       <Sidebar
         currentTab={currentTab}
@@ -102,8 +71,8 @@ export const App: React.FC = () => {
         <Header
           activeModelVersion={activeModelVersion}
           pendingAlertsCount={pendingAlertsCount}
-          onRunDemo={handleRunFullDemo}
-          isDemoRunning={isDemoRunning}
+          selectedRecordId={selectedRecordId}
+          onNavigateToAlerts={() => setCurrentTab('alerts_review')}
           onOpenQr={() => setIsQrModalOpen(true)}
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />
@@ -114,56 +83,52 @@ export const App: React.FC = () => {
           onClose={() => setIsQrModalOpen(false)}
         />
 
-        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-3 sm:p-4 lg:p-6 bg-gradient-to-b from-slate-950 via-slate-900/40 to-slate-950">
+        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-4 lg:p-6 bg-slate-50">
           <div className="w-full max-w-7xl mx-auto pb-12 min-w-0">
-            {currentTab === 'dashboard' && (
+            {currentTab === 'overview' && (
               <DashboardPage
                 onNavigateToDecision={handleNavigateToDecision}
-                onNavigateToAlerts={() => setCurrentTab('alerts')}
-                onNavigateToNewPrediction={() => setCurrentTab('new_prediction')}
+                onNavigateToAlerts={() => setCurrentTab('alerts_review')}
+                onNavigateToNewPrediction={() => setCurrentTab('new_assessment')}
+                onNavigateToPatients={() => setCurrentTab('patients')}
               />
             )}
 
-            {currentTab === 'patient_pdf_uploader' && <PatientReportUploaderPage />}
-            {currentTab === 'user_guide' && <UserGuidePage />}
-            {currentTab === 'architecture_usp' && <ArchitectureUspPage />}
-            {currentTab === 'cancer_genomics' && <CancerGenomicsPage />}
+            {currentTab === 'patients' && (
+              <PatientRecordsPage onSelectRecord={handleNavigateToDecision} />
+            )}
+
+            {currentTab === 'new_assessment' && (
+              <NewPredictionPage onPredictionComplete={handlePredictionComplete} />
+            )}
 
             {currentTab === 'decision_support' && (
               <ClinicalDecisionPage initialRecordId={selectedRecordId} />
             )}
 
-            {currentTab === 'vision_derm' && <VisionDermPage />}
-
-            {currentTab === 'new_prediction' && (
-              <NewPredictionPage onPredictionComplete={handlePredictionComplete} />
-            )}
-
-            {currentTab === 'alerts' && (
+            {currentTab === 'alerts_review' && (
               <AlertsPage onNavigateToDecision={handleNavigateToDecision} />
             )}
 
-            {currentTab === 'doctor_review' && <DoctorReviewPage />}
+            {currentTab === 'reports' && <ReportsPage />}
 
             {currentTab === 'model_lab' && <ModelLabPage />}
 
             {currentTab === 'quantum_lab' && <QuantumLabPage />}
 
-            {currentTab === 'data_quality' && <DataQualityPage />}
+            {currentTab === 'genomics_data' && <CancerGenomicsPage />}
 
-            {currentTab === 'patient_records' && (
-              <PatientRecordsPage onSelectRecord={handleNavigateToDecision} />
+            {currentTab === 'audit_settings' && (
+              <div className="space-y-6">
+                <AuditLogsPage />
+                <SettingsPage />
+              </div>
             )}
-
-            {currentTab === 'reports' && <ReportsPage />}
-
-            {currentTab === 'audit_logs' && <AuditLogsPage />}
-
-            {currentTab === 'settings' && <SettingsPage />}
           </div>
         </main>
       </div>
     </div>
   );
 };
+
 export default App;

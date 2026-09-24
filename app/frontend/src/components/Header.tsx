@@ -1,42 +1,54 @@
 import React from 'react';
-import { Bell, PlayCircle, QrCode, Menu } from 'lucide-react';
+import { Cpu, Bell, Activity, User, QrCode, Menu } from 'lucide-react';
 
 interface HeaderProps {
   activeModelVersion?: string;
   pendingAlertsCount: number;
-  onRunDemo: () => void;
-  isDemoRunning?: boolean;
+  selectedRecordId?: string;
+  onNavigateToAlerts?: () => void;
   onOpenQr?: () => void;
   onToggleMobileMenu?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  activeModelVersion,
+  activeModelVersion = 'Hybrid-VQC-v1.0',
   pendingAlertsCount,
-  onRunDemo,
-  isDemoRunning = false,
+  selectedRecordId,
+  onNavigateToAlerts,
   onOpenQr,
   onToggleMobileMenu
-}: HeaderProps) => {
+}) => {
   return (
-    <header className="h-16 px-4 sm:px-6 glass-panel border-b border-slate-800/80 flex items-center justify-between sticky top-0 z-30 shrink-0">
-      {/* Left: Mobile Menu Toggle & System Title */}
+    <header className="h-14 px-4 sm:px-6 bg-white border-b border-slate-200 flex items-center justify-between sticky top-0 z-30 shrink-0">
+      {/* Left: Mobile Menu & Active Context */}
       <div className="flex items-center gap-3 min-w-0">
         {onToggleMobileMenu && (
           <button
             onClick={onToggleMobileMenu}
-            className="md:hidden p-2 rounded-xl text-slate-300 hover:text-white bg-slate-900 border border-slate-800 transition-colors shrink-0"
-            title="Toggle Menu"
+            className="md:hidden p-1.5 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors shrink-0 cursor-pointer"
+            title="Toggle Navigation Menu"
           >
             <Menu className="w-5 h-5" />
           </button>
         )}
 
-        <div className="flex items-center gap-2 truncate">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-          <span className="text-xs sm:text-sm font-bold text-slate-200 tracking-tight truncate">
-            Clinical Decision Support System
-          </span>
+        {selectedRecordId ? (
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded bg-slate-100 border border-slate-200 text-xs truncate">
+            <User className="w-3.5 h-3.5 text-cyan-700 shrink-0" />
+            <span className="text-slate-500 font-medium hidden sm:inline">Active Patient Context:</span>
+            <span className="font-mono font-bold text-slate-900 truncate">{selectedRecordId}</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-xs text-slate-500 truncate">
+            <Activity className="w-3.5 h-3.5 text-cyan-700 shrink-0" />
+            <span className="font-semibold text-slate-800 truncate">BlazeFinix Clinical Decision Support</span>
+          </div>
+        )}
+
+        <div className="hidden lg:flex items-center gap-2 pl-4 border-l border-slate-200 text-xs text-slate-500">
+          <Cpu className="w-3.5 h-3.5 text-slate-400" />
+          <span>Model Engine:</span>
+          <span className="font-mono text-slate-700 font-medium">{activeModelVersion}</span>
         </div>
       </div>
 
@@ -46,49 +58,47 @@ export const Header: React.FC<HeaderProps> = ({
         {onOpenQr && (
           <button
             onClick={onOpenQr}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 shadow-sm transition-all"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 transition-colors cursor-pointer shadow-xs"
             title="Scan 24/7 Mobile QR Code"
           >
-            <QrCode className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span className="hidden sm:inline">24/7 Mobile QR</span>
+            <QrCode className="w-3.5 h-3.5 text-cyan-700 shrink-0" />
+            <span className="hidden sm:inline">Mobile QR</span>
           </button>
         )}
 
-        {/* Full Demo Trigger Button */}
-        <button
-          onClick={onRunDemo}
-          disabled={isDemoRunning}
-          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white transition-all shadow-sm active:scale-95 shrink-0"
-        >
-          <PlayCircle className={`w-4 h-4 shrink-0 ${isDemoRunning ? 'animate-spin' : ''}`} />
-          <span>
-            {isDemoRunning ? 'Executing Demo...' : (
-              <>
-                <span className="inline sm:hidden">Run Demo</span>
-                <span className="hidden sm:inline">Run Full Pipeline Demo</span>
-              </>
-            )}
-          </span>
-        </button>
+        {/* Research Disclaimer Pill */}
+        <div className="hidden xl:inline-flex items-center px-2.5 py-1 rounded text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+          Research Prototype — Decision Support Only
+        </div>
 
-        {/* Alerts Notification Badge */}
-        <div className="relative p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0">
+        {/* System Backend Status */}
+        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 font-medium">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+          <span className="text-[11px]">Backend Online</span>
+        </div>
+
+        {/* Alerts Notification Button */}
+        <button
+          onClick={onNavigateToAlerts}
+          className="relative p-1.5 rounded bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition-colors cursor-pointer"
+          title="View Alerts & Triage Queue"
+        >
           <Bell className="w-4 h-4" />
           {pendingAlertsCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm">
+            <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white shadow-xs">
               {pendingAlertsCount}
             </span>
           )}
-        </div>
+        </button>
 
-        {/* Profile Avatar */}
-        <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-slate-800 shrink-0">
-          <div className="w-7 h-7 rounded-full bg-indigo-950/80 border border-indigo-500/30 flex items-center justify-center text-indigo-300 text-xs font-bold shrink-0">
+        {/* Attending Clinician Badge */}
+        <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-slate-200">
+          <div className="w-7 h-7 rounded bg-cyan-100 border border-cyan-300 flex items-center justify-center text-cyan-800 text-xs font-bold font-mono">
             MD
           </div>
-          <div className="hidden lg:block text-left">
-            <div className="text-xs font-medium text-slate-200">Clinical Attending</div>
-            <div className="text-[10px] text-slate-500">Research & Triage</div>
+          <div className="hidden sm:block text-left leading-tight">
+            <div className="text-xs font-bold text-slate-900">Clinical Attending</div>
+            <div className="text-[10px] text-slate-500">Cardiometabolic & Oncology</div>
           </div>
         </div>
       </div>
@@ -96,3 +106,4 @@ export const Header: React.FC<HeaderProps> = ({
   );
 };
 
+export default Header;

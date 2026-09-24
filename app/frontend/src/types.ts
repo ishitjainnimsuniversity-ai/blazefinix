@@ -25,6 +25,29 @@ export interface AlertData {
   disclaimer?: string;
 }
 
+export interface QuantumTelemetry {
+  simulator: string;
+  execution_mode: string;
+  qubits: number;
+  circuit_depth: number;
+  shots_executed: number;
+  execution_time_ms: number;
+  pauli_z_expectation: number;
+  measurement_counts: Record<string, number>;
+  total_observed_states: number;
+  top_state: string;
+  encoded_biomarkers?: string[];
+}
+
+export interface ProvenanceData {
+  dataset_source: string;
+  feature_selection: string;
+  classical_engine: string;
+  quantum_engine: string;
+  execution_locality: string;
+  timestamp: string;
+}
+
 export interface PredictionResult {
   prediction_id: string;
   record_id: string;
@@ -37,10 +60,32 @@ export interface PredictionResult {
   uncertainty_score: number;
   contributing_factors: ContributingFactor[];
   explanation_summary: string;
+  quantum_telemetry?: QuantumTelemetry;
+  provenance?: ProvenanceData;
   alert?: AlertData | null;
   recommendation: string;
   disclaimer: string;
   timestamp: string;
+  features?: Record<string, number>;
+}
+
+export interface SimulationExperimentResult {
+  record_id: string;
+  model_version: string;
+  classical_risk: number;
+  quantum_risk: number;
+  hybrid_risk: number;
+  uncertainty_score: number;
+  shots_executed: number;
+  circuit_depth: number;
+  qubit_count: number;
+  execution_time_ms: number;
+  pauli_z_expectation: number;
+  measurement_counts: Record<string, number>;
+  total_observed_states: number;
+  top_state: string;
+  encoded_biomarkers: string[];
+  simulator: string;
 }
 
 export interface DemoCase {
@@ -73,6 +118,7 @@ export interface BenchmarkResult {
   train_samples: number;
   test_samples: number;
   model_version: string;
+  qubits?: number;
   selected_features: string[];
   feature_importances: { feature: string; importance: number; original_index: number }[];
   models_comparison: ModelComparison[];

@@ -806,15 +806,9 @@ class CancerGenomicsService:
             "quantum_metrics": {
                 "vqc_expectation": round(quantum_prob, 4),
                 "qubits_utilized": 4,
-                "circuit_depth": 6,
-                "state_fidelity": 0.9982,
-                "entanglement_entropy": 0.8412,
-                "bloch_angles": [
-                    {"qubit": 0, "theta": 1.42, "phi": 0.81},
-                    {"qubit": 1, "theta": 2.15, "phi": 1.34},
-                    {"qubit": 2, "theta": 0.98, "phi": 2.05},
-                    {"qubit": 3, "theta": 1.87, "phi": 0.45}
-                ]
+                "circuit_depth": 2,
+                "simulator": "PennyLane.default.qubit",
+                "execution_mode": "ANALYTIC_STATEVECTOR"
             },
             "medical_disclaimer": "AI-generated risk assessment — not a final medical diagnosis. Final clinical decision remains with a qualified healthcare professional."
         }
@@ -908,7 +902,7 @@ class CancerGenomicsService:
             metrics_table_data = [
                 [Paragraph("<b>Pipeline Stage</b>", body_bold), Paragraph("<b>Algorithm / Architecture</b>", body_bold), Paragraph("<b>Output Probability</b>", body_bold), Paragraph("<b>Clinical Significance</b>", body_bold)],
                 [Paragraph("Stage 2 (Boosting)", body_p), Paragraph("XGBoost + AdaBoost Ensemble", body_p), Paragraph(f"{c_metrics.get('xgboost_prob', 0.68):.4f}", body_p), Paragraph("High tabular biomarker sensitivity", body_p)],
-                [Paragraph("Stage 3 (Quantum VQC)", body_p), Paragraph("4-Qubit Parameterized Circuit (RY/RZ + CNOT)", body_p), Paragraph(f"{q_metrics.get('vqc_expectation', 0.74):.4f}", body_p), Paragraph(f"Entropy: {q_metrics.get('entanglement_entropy', 0.84):.4f} | Fidelity: {q_metrics.get('state_fidelity', 0.998):.4f}", body_p)],
+                [Paragraph("Stage 3 (Quantum VQC)", body_p), Paragraph("4-Qubit Parameterized Circuit (RY/RZ + CNOT)", body_p), Paragraph(f"{q_metrics.get('vqc_expectation', 0.74):.4f}", body_p), Paragraph("PennyLane default.qubit statevector projection", body_p)],
                 [Paragraph("Stage 4 (Harmonization)", body_p), Paragraph("Bayesian Hybrid Consensus Layer", body_p), Paragraph(f"<b>{risk_score:.4f}</b>", body_p), Paragraph(f"Stratified into {risk_tier}", body_p)]
             ]
             m_table = Table(metrics_table_data, colWidths=[110, 160, 110, 160])

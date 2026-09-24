@@ -12,7 +12,8 @@ import {
   SkinReferenceSample,
   VisionAnalysisResult,
   MultiModalPredictResponse,
-  ArchitectureUspData
+  ArchitectureUspData,
+  SimulationExperimentResult
 } from './types';
 
 import { ALL_COHORT_ALERTS } from './allAlertsData';
@@ -219,155 +220,34 @@ export async function fetchDemoCases(): Promise<DemoCase[]> {
 }
 
 /**
- * Real client-side Mathematical Hybrid Quantum-Classical Risk Engine.
- * Executed whenever backend is static or offline.
+ * Executes genuine hybrid classical-quantum risk prediction via local Python backend.
+ * Zero client-side mathematical approximations. If the backend is offline, throws an error.
  */
 export async function predictPatientRisk(
   features: Record<string, number>,
-  recordId?: string
+  recordId?: string,
+  qubits?: number,
+  shots = 1024
 ): Promise<PredictionResult> {
-  // Try remote backend first
-  try {
-    const res = await fetch(`${API_BASE}/predict`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ features, record_id: recordId })
-    });
-    if (res.ok) {
-      const contentType = res.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        return await res.json();
-      }
-    }
-  } catch (e) {
-    // Gracefully continue to local simulation
+  const res = await fetch(`${API_BASE}/predict`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      features,
+      record_id: recordId,
+      qubits,
+      shots
+    })
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => '');
+    throw new Error(
+      `LOCAL COMPUTATION OFFLINE: Backend prediction failed (HTTP ${res.status}). Ensure FastAPI server is running on port 8000.`
+    );
   }
 
-  // --- CLIENT-SIDE QUANTUM-CLASSICAL CALCULATION ---
-  const sbp = features.systolic_bp || 120;
-  const glu = features.fasting_glucose || 90;
-  const a1c = features.hba1c || 5.4;
-  const ldl = features.ldl_cholesterol || 100;
-  const crp = features.hs_crp || 1.0;
-  const age = features.age || 50;
-  const smoker = features.smoking_status || 0;
-  const fam = features.family_history_cad || 0;
-  const bmi = features.bmi || 24;
-  const egfr = features.egfr || 90;
-
-  // Classical XGBoost log-odds score
-  const z =
-    (sbp - 120) * 0.025 +
-    (glu - 95) * 0.018 +
-    (a1c - 5.4) * 0.35 +
-    (ldl - 100) * 0.012 +
-    (crp - 1.0) * 0.15 +
-    smoker * 0.45 +
-    fam * 0.40 +
-    (bmi - 24) * 0.04 -
-    (egfr - 90) * 0.015 -
-    0.65;
-
-  const classicalRisk = Math.min(0.99, Math.max(0.05, 1 / (1 + Math.exp(-z))));
-
-  // 4-Qubit Variational Quantum state projection (Bloch angle rotation)
-  const theta0 = ((sbp - 90) / 110) * Math.PI;
-  const theta1 = ((glu - 70) / 150) * Math.PI;
-  const theta2 = ((ldl - 60) / 160) * Math.PI;
-  const theta3 = ((crp - 0.2) / 10) * Math.PI;
-
-  const vqcExpectation =
-    0.5 * (1 + Math.sin(theta0 * 0.8) * Math.cos(theta1 * 0.6) + 0.3 * Math.sin(theta2) * Math.cos(theta3));
-  const quantumRisk = Math.min(0.99, Math.max(0.05, vqcExpectation));
-
-  // Soft-voting hybrid ensemble: 60% XGBoost + 40% VQC
-  const hybridRisk = Math.round((0.60 * classicalRisk + 0.40 * quantumRisk) * 10000) / 10000;
-
-  // Uncertainty score
-  const uncertainty = Math.round((Math.abs(classicalRisk - quantumRisk) * 0.4 + 0.04) * 10000) / 10000;
-
-  let riskCat = 'Low Risk';
-  let severity = 'NORMAL';
-  if (hybridRisk >= 0.80) {
-    riskCat = 'Critical Risk';
-    severity = 'CRITICAL';
-  } else if (hybridRisk >= 0.60) {
-    riskCat = 'High Risk';
-    severity = 'HIGH';
-  } else if (hybridRisk >= 0.35) {
-    riskCat = 'Moderate Risk';
-    severity = 'WARNING';
-  }
-
-  // Generate top 4 SHAP Contributing Factors
-  const rawFactors = [
-    { feature: 'systolic_bp', patient_value: `${Math.round(sbp)} mmHg`, score: (sbp - 120) * 0.025, note: sbp > 140 ? 'Stage 2 Hypertension' : 'Normal Hemodynamics' },
-    { feature: 'hba1c', patient_value: `${a1c.toFixed(1)}%`, score: (a1c - 5.4) * 0.35, note: a1c > 6.5 ? 'Diabetic Glycemic Range' : (a1c > 5.7 ? 'Pre-diabetic Range' : 'Normoglycemic') },
-    { feature: 'hs_crp', patient_value: `${crp.toFixed(1)} mg/L`, score: (crp - 1.0) * 0.15, note: crp > 3.0 ? 'High Vascular Inflammation' : 'Normal CRP' },
-    { feature: 'ldl_cholesterol', patient_value: `${Math.round(ldl)} mg/dL`, score: (ldl - 100) * 0.012, note: ldl > 130 ? 'Atherogenic Dyslipidemia' : 'Optimal Lipid Level' },
-    { feature: 'smoking_status', patient_value: smoker ? 'Active' : 'Non-smoker', score: smoker * 0.45, note: smoker ? 'Elevated Endothelial Stress' : 'Zero Nicotine Risk' }
-  ];
-
-  rawFactors.sort((a, b) => Math.abs(b.score) - Math.abs(a.score));
-  const contributingFactors: ContributingFactor[] = rawFactors.slice(0, 4).map((f) => ({
-    feature: f.feature,
-    importance_value: Math.abs(f.score),
-    patient_value: f.patient_value,
-    contribution: f.score >= 0 ? `+${f.score.toFixed(3)}` : f.score.toFixed(3),
-    clinical_note: f.note
-  }));
-
-  const patientRecId = recordId || `REC-${Math.floor(1000 + Math.random() * 9000)}`;
-
-  let alertObj: AlertData | null = null;
-  if (hybridRisk >= 0.60) {
-    alertObj = {
-      alert_id: `ALT-${patientRecId}`,
-      record_id: patientRecId,
-      prediction_id: `PRED-${patientRecId}`,
-      risk_score: hybridRisk,
-      severity: severity as any,
-      reason: `Calibrated hybrid risk exceeding clinical alert threshold (${Math.round(hybridRisk * 100)}%) driven by ${contributingFactors[0].feature}`,
-      recommendation: hybridRisk >= 0.80
-        ? 'Immediate inpatient telemetry, emergency cardiometabolic panel, and attending clinician notification.'
-        : 'Expedited outpatient follow-up within 14 days, statin therapy review, and ambulatory BP monitoring.',
-      contributing_factors: contributingFactors.map((f) => `${f.feature} (${f.patient_value})`),
-      status: 'PENDING',
-      acknowledged: false,
-      created_at: new Date().toISOString()
-    };
-
-    // Persist alert in localStorage
-    try {
-      const storedAlerts = JSON.parse(localStorage.getItem('blazefinix_alerts') || '[]');
-      storedAlerts.unshift(alertObj);
-      localStorage.setItem('blazefinix_alerts', JSON.stringify(storedAlerts.slice(0, 50)));
-    } catch (e) {
-      // localStorage error ignored
-    }
-  }
-
-  const result: PredictionResult = {
-    prediction_id: `PRED-${patientRecId}`,
-    record_id: patientRecId,
-    classical_risk: Math.round(classicalRisk * 10000) / 10000,
-    quantum_risk: Math.round(quantumRisk * 10000) / 10000,
-    hybrid_risk: hybridRisk,
-    risk_category: riskCat,
-    confidence: uncertainty < 0.10 ? 'High' : 'Moderate',
-    uncertainty_score: uncertainty,
-    contributing_factors: contributingFactors,
-    explanation_summary: `Ensemble analysis indicates a ${riskCat} state (${Math.round(hybridRisk * 100)}%). Classical baseline computed ${Math.round(classicalRisk * 100)}% risk, complemented by 4-qubit quantum sensitivity mapping at ${Math.round(quantumRisk * 100)}%. Primary discriminator is ${contributingFactors[0].feature} (${contributingFactors[0].patient_value}).`,
-    model_version: 'Hybrid-VQC-v4Q-5409',
-    alert: alertObj,
-    recommendation: hybridRisk >= 0.80
-      ? 'Immediate inpatient telemetry, emergency cardiometabolic panel, and attending clinician notification.'
-      : hybridRisk >= 0.60
-      ? 'Expedited outpatient follow-up within 14 days, statin therapy review, and ambulatory BP monitoring.'
-      : 'Maintain healthy lifestyle habits and repeat annual screening.',
-    disclaimer: 'Research decision-support output only. Not a standalone medical diagnostic device.',
-    timestamp: new Date().toISOString()
-  };
+  const result: PredictionResult = await res.json();
 
   // Save to history in localStorage
   try {
@@ -381,6 +261,41 @@ export async function predictPatientRisk(
   return result;
 }
 
+export async function runQuantumSimulation(
+  qubits = 4,
+  depth = 2,
+  shots = 1024,
+  features?: Record<string, number>
+): Promise<SimulationExperimentResult> {
+  const featPayload = features || {
+    age: 62.0,
+    sex: 1.0,
+    systolic_bp: 154.0,
+    fasting_glucose: 140.0,
+    hba1c: 7.1,
+    hs_crp: 4.2
+  };
+  const res = await fetch(`${API_BASE}/models/simulate-experiment`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      features: featPayload,
+      qubits,
+      depth,
+      shots
+    })
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => '');
+    throw new Error(
+      `LOCAL COMPUTATION OFFLINE: Quantum simulation failed (HTTP ${res.status}). Ensure FastAPI backend is running.`
+    );
+  }
+
+  return await res.json();
+}
+
 export async function fetchPredictionHistory(): Promise<any[]> {
   const localHistory = (() => {
     try {
@@ -392,8 +307,12 @@ export async function fetchPredictionHistory(): Promise<any[]> {
   return safeFetchJson(`${API_BASE}/predict/history`, undefined, localHistory);
 }
 
-export async function fetchBenchmark(): Promise<BenchmarkResult> {
-  return safeFetchJson(`${API_BASE}/models/benchmark`, undefined, FALLBACK_BENCHMARK as BenchmarkResult);
+export async function fetchBenchmark(qubits = 4): Promise<BenchmarkResult> {
+  const res = await fetch(`${API_BASE}/models/benchmark?qubits=${qubits}`);
+  if (!res.ok) {
+    throw new Error(`Failed to load benchmark from local backend (HTTP ${res.status}).`);
+  }
+  return await res.json();
 }
 
 export async function trainPipeline(config: {
@@ -402,37 +321,24 @@ export async function trainPipeline(config: {
   test_size?: number;
   cv_folds?: number;
 }) {
-  return safeFetchJson(`${API_BASE}/models/train`, {
+  const res = await fetch(`${API_BASE}/models/train`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(config)
-  }, {
-    status: 'success',
-    message: 'Simulated 5-Fold Stratified Cross-Validation complete',
-    metrics: {
-      accuracy: 0.9000,
-      sensitivity: 0.9706,
-      roc_auc: 0.9314,
-      f1_score: 0.9429
-    }
   });
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => '');
+    throw new Error(`Model training failed on local backend (HTTP ${res.status}): ${errBody}`);
+  }
+  return await res.json();
 }
 
 export async function fetchQuantumCircuit(qubits = 4, depth = 2) {
-  return safeFetchJson(`${API_BASE}/models/quantum-circuit?qubits=${qubits}&depth=${depth}`, undefined, {
-    qubits: qubits,
-    depth: depth,
-    circuit_ascii: `
-q_0: ──Ry(θ_0)──■───────────────■───M──
-q_1: ──Ry(θ_1)──X──■────────────│───M──
-q_2: ──Ry(θ_2)─────X──■─────────│───M──
-q_3: ──Ry(θ_3)────────X──■──────│───M──
-                         │      │      
-Ansatz: StronglyEntangling (Rot + CNOT Ring)
-    `.trim(),
-    state_fidelity: 0.9982,
-    entanglement_entropy: 0.8412
-  });
+  const res = await fetch(`${API_BASE}/models/quantum-circuit?qubits=${qubits}&depth=${depth}`);
+  if (!res.ok) {
+    throw new Error(`Failed to load quantum circuit metadata (HTTP ${res.status}).`);
+  }
+  return await res.json();
 }
 
 export async function runQuantumSimulator(params: {
@@ -1152,104 +1058,16 @@ export async function fetchIcgcArgoMetadata(): Promise<any> {
   });
 }
 
-/**
- * Real client-side Cancer Risk Evaluation Engine.
- * Combines stage, age, and mutations into dual ensemble (XGBoost + AdaBoost) + 4-Qubit Quantum VQC.
- */
 export async function evaluateCancerRisk(payload: any): Promise<any> {
-  const stage = String(payload.stage || 'Stage IIA').toUpperCase();
-  const age = Number(payload.age || 58);
-  const mutations = payload.driver_mutations || ['TP53'];
-
-  // Stage score
-  let stageScore = 2.0;
-  if (stage.includes('IV')) stageScore = 4.0;
-  else if (stage.includes('III')) stageScore = 3.0;
-  else if (stage.includes('II')) stageScore = 2.0;
-  else if (stage.includes('I')) stageScore = 1.0;
-
-  const tp53Mut = mutations.some((m: string) => m.toUpperCase().includes('TP53')) ? 1.0 : 0.0;
-  const brcaMut = mutations.some((m: string) => m.toUpperCase().includes('BRCA')) ? 1.0 : 0.0;
-  const mutCount = mutations.length;
-
-  const classicalProb = Math.min(0.98, Math.max(0.10, 0.25 + stageScore * 0.14 + tp53Mut * 0.18 + brcaMut * 0.12 + (age - 50) * 0.005));
-  const quantumProb = Math.min(0.99, Math.max(0.12, 0.28 + stageScore * 0.12 + tp53Mut * 0.22 + mutCount * 0.04));
-  const hybridRisk = Math.round((0.60 * classicalProb + 0.40 * quantumProb) * 10000) / 10000;
-
-  let riskTier = 'LOW RISK';
-  let riskColor = '#10B981';
-  let recommendation = 'Standard oncology surveillance protocol and routine biennial imaging.';
-  if (hybridRisk >= 0.70) {
-    riskTier = 'CRITICAL RISK';
-    riskColor = '#EF4444';
-    recommendation = 'Immediate multidisciplinary tumor board consultation, urgent NGS confirmatory panel, and expedited PET-CT restaging.';
-  } else if (hybridRisk >= 0.45) {
-    riskTier = 'HIGH RISK';
-    riskColor = '#F97316';
-    recommendation = 'Comprehensive germline and somatic genetic testing, target molecular therapy profiling, and 3-week clinical follow-up.';
-  } else if (hybridRisk >= 0.25) {
-    riskTier = 'MODERATE RISK';
-    riskColor = '#F59E0B';
-    recommendation = 'Regular surveillance protocol, repeat biomarker assay in 3 months, and risk-factor reduction counselling.';
+  const res = await fetch(`${API_BASE}/cancer/evaluate-risk`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    throw new Error(`LOCAL COMPUTATION OFFLINE: Backend error ${res.status}`);
   }
-
-  const simulatedResult = {
-    patient_id: payload.patient_id || 'TCGA-BH-A0B2',
-    cancer_key: payload.cancer_key || 'breast',
-    cancer_name: payload.cancer_name || 'Breast Invasive Carcinoma',
-    project_id: payload.project_id || 'TCGA-BRCA',
-    study_id: payload.study_id || 'brca_tcga_pan_can_atlas_2018',
-    gender: payload.gender || 'female',
-    age: age,
-    stage: payload.stage || 'Stage IIA',
-    driver_mutations: mutations,
-    hybrid_risk_score: hybridRisk,
-    risk_tier: riskTier,
-    risk_color: riskColor,
-    recommendation: recommendation,
-    classical_breakdown: {
-      xgboost_prob: Math.round(classicalProb * 10000) / 10000,
-      confidence_lower: Math.round(Math.max(0.0, classicalProb - 0.08) * 10000) / 10000,
-      confidence_upper: Math.round(Math.min(1.0, classicalProb + 0.08) * 10000) / 10000,
-      top_attributions: [
-        `Tumor Stage (${payload.stage || 'Stage IIA'}): +0.28`,
-        `Driver Mutations (${mutations.join(', ')}): +0.22`,
-        `Patient Age (${age}y): +0.12`
-      ]
-    },
-    quantum_metrics: {
-      vqc_expectation: Math.round(quantumProb * 10000) / 10000,
-      qubits_utilized: 4,
-      circuit_depth: 6,
-      state_fidelity: 0.9982,
-      entanglement_entropy: 0.8412,
-      bloch_angles: [
-        { qubit: 0, theta: 1.42, phi: 0.81 },
-        { qubit: 1, theta: 2.15, phi: 1.34 },
-        { qubit: 2, theta: 0.98, phi: 2.05 },
-        { qubit: 3, theta: 1.87, phi: 0.45 }
-      ]
-    },
-    medical_disclaimer: 'AI-generated risk assessment — not a final medical diagnosis. Final clinical decision remains with a qualified healthcare professional.'
-  };
-
-  try {
-    const res = await fetch(`${API_BASE}/cancer/evaluate-risk`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (res.ok) {
-      const contentType = res.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        return await res.json();
-      }
-    }
-  } catch (e) {
-    // Continue with simulated result
-  }
-
-  return simulatedResult;
+  return await res.json();
 }
 
 export async function downloadCancerPdfReport(evaluation: any, reportType: 'clinical' | 'doctor' | 'patient'): Promise<Blob> {
@@ -1514,8 +1332,12 @@ export async function fetchSamplePatientsList(): Promise<any[]> {
   } catch (e) {
     // fallback
   }
-  const { DEMO_UPLOAD_SAMPLES } = await import('./utils/quantum20QEngine');
-  return DEMO_UPLOAD_SAMPLES;
+  try {
+    const { DEMO_UPLOAD_SAMPLES } = await import('./utils/quantum20QEngine');
+    return DEMO_UPLOAD_SAMPLES;
+  } catch {
+    return [];
+  }
 }
 
 export async function uploadPatientReportPdfApi(
@@ -1687,4 +1509,5 @@ TARGETED THERAPY & CLINICAL PLAN:
   `;
   return new Blob([textSummary], { type: 'text/plain;charset=utf-8' });
 }
+
 

@@ -1,22 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Cpu,
   ArrowRight,
-  Download,
-  Atom,
-  Dna
+  AlertTriangle,
+  Upload,
+  CheckCircle2
 } from 'lucide-react';
 import { DemoCase, PredictionResult } from '../types';
 import {
-  fetchDemoCases,
   FALLBACK_DEMO_CASES,
   predictPatientRisk,
-  getReportPdfUrl,
-  getDoctorReportPdfUrl,
-  getPatientReportPdfUrl
+  uploadPatientReportPdfApi
 } from '../api';
 import { MedicalDisclaimer } from '../components/MedicalDisclaimer';
-import { getGenesForRecord } from '../utils/cancerGenomicsData';
 
 interface NewPredictionPageProps {
   onPredictionComplete: (pred: PredictionResult) => void;
@@ -24,423 +20,358 @@ interface NewPredictionPageProps {
 
 export const NewPredictionPage: React.FC<NewPredictionPageProps> = ({
   onPredictionComplete
-}: NewPredictionPageProps) => {
-  const [demoCases, setDemoCases] = useState<DemoCase[]>(FALLBACK_DEMO_CASES);
-  const [recordId, setRecordId] = useState(`R-${Math.floor(100000 + Math.random() * 900000)}`);
+}) => {
+  const [recordId, setRecordId] = useState(`P-${Math.floor(10000 + Math.random() * 90000)}`);
   const [loading, setLoading] = useState(false);
-  const [inlineResult, setInlineResult] = useState<PredictionResult | null>(null);
+  const [extractingPdf, setExtractingPdf] = useState(false);
+  const [pdfSuccessMessage, setPdfSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Clinical feature inputs
-  const [features, setFeatures] = useState<Record<string, number>>({
-    age: 58.0,
-    sex: 1.0,
-    systolic_bp: 142.0,
-    diastolic_bp: 88.0,
-    fasting_glucose: 126.0,
-    hba1c: 6.5,
-    total_cholesterol: 228.0,
-    hdl_cholesterol: 42.0,
-    ldl_cholesterol: 145.0,
-    triglycerides: 195.0,
-    bmi: 29.4,
-    resting_heart_rate: 76.0,
-    smoking_status: 1.0,
-    physical_activity_hours: 1.5,
-    family_history_cad: 1.0,
-    hs_crp: 3.2,
-    egfr: 78.0
+  // Grouped clinical parameters
+  const [vitals, setVitals] = useState({
+    age: 58,
+    sex: 1, // 1 = Male, 0 = Female
+    systolic_bp: 148,
+    diastolic_bp: 92,
+    body_mass_index: 29.4
   });
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const cases = await fetchDemoCases();
-        if (Array.isArray(cases) && cases.length > 0) {
-          setDemoCases(cases);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    load();
-  }, []);
+  const [metabolic, setMetabolic] = useState({
+    fasting_glucose: 132,
+    hba1c: 6.8,
+    hs_crp: 3.6,
+    egfr: 78
+  });
+
+  const [lipids, setLipids] = useState({
+    total_cholesterol: 215,
+    ldl_cholesterol: 138,
+    hdl_cholesterol: 44,
+    triglycerides: 185
+  });
 
   function loadDemoProfile(demoCase: DemoCase) {
     setRecordId(demoCase.case_id);
-    setFeatures({ ...demoCase.features });
+    const f = demoCase.features || {};
+    setVitals({
+      age: f.age || 58,
+      sex: f.sex ?? 1,
+      systolic_bp: f.systolic_bp || 140,
+      diastolic_bp: f.diastolic_bp || 88,
+      body_mass_index: f.bmi || f.body_mass_index || 28
+    });
+    setMetabolic({
+      fasting_glucose: f.fasting_glucose || 120,
+      hba1c: f.hba1c || 6.2,
+      hs_crp: f.hs_crp || 2.5,
+      egfr: f.egfr || 85
+    });
+    setLipids({
+      total_cholesterol: f.total_cholesterol || 210,
+      ldl_cholesterol: f.ldl_cholesterol || 130,
+      hdl_cholesterol: f.hdl_cholesterol || 45,
+      triglycerides: f.triglycerides || 160
+    });
   }
 
-  function handleFeatureChange(key: string, val: number) {
-    setFeatures((prev: Record<string, number>) => ({ ...prev, [key]: val }));
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setExtractingPdf(true);
+    setPdfSuccessMessage(null);
+    setErrorMessage(null);
+    try {
+      const extracted = await uploadPatientReportPdfApi(file);
+      setPdfSuccessMessage(`Extracted parameters from ${file.name} successfully. Please review extracted values below.`);
+      if (extracted.extracted_data) {
+        const d = extracted.extracted_data;
+        if (d.age) setVitals((v) => ({ ...v, age: d.age }));
+        if (d.systolic_bp) setVitals((v) => ({ ...v, systolic_bp: d.systolic_bp }));
+        if (d.diastolic_bp) setVitals((v) => ({ ...v, diastolic_bp: d.diastolic_bp }));
+        if (d.fasting_glucose) setMetabolic((m) => ({ ...m, fasting_glucose: d.fasting_glucose }));
+        if (d.hba1c) setMetabolic((m) => ({ ...m, hba1c: d.hba1c }));
+        if (d.hs_crp) setMetabolic((m) => ({ ...m, hs_crp: d.hs_crp }));
+        if (d.ldl_cholesterol) setLipids((l) => ({ ...l, ldl_cholesterol: d.ldl_cholesterol }));
+        if (d.triglycerides) setLipids((l) => ({ ...l, triglycerides: d.triglycerides }));
+      }
+    } catch (err: any) {
+      setErrorMessage('PDF extraction service offline — fell back to manual entry.');
+    } finally {
+      setExtractingPdf(false);
+    }
   }
 
-  async function handleExecutePrediction(e: React.FormEvent) {
+  async function handleExecuteAssessment(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage(null);
+
+    const mergedFeatures: Record<string, number> = {
+      age: vitals.age,
+      sex: vitals.sex,
+      systolic_bp: vitals.systolic_bp,
+      diastolic_bp: vitals.diastolic_bp,
+      bmi: vitals.body_mass_index,
+      fasting_glucose: metabolic.fasting_glucose,
+      hba1c: metabolic.hba1c,
+      hs_crp: metabolic.hs_crp,
+      egfr: metabolic.egfr,
+      total_cholesterol: lipids.total_cholesterol,
+      ldl_cholesterol: lipids.ldl_cholesterol,
+      hdl_cholesterol: lipids.hdl_cholesterol,
+      triglycerides: lipids.triglycerides
+    };
+
     try {
-      const pred = await predictPatientRisk(features, recordId);
-      setInlineResult(pred);
-      onPredictionComplete(pred);
+      const pred = await predictPatientRisk(mergedFeatures, recordId);
 
-      // Save to prediction history in localStorage
+      // Save into local prediction history for persistence
       try {
-        const existing = JSON.parse(localStorage.getItem('blazefinix_prediction_history') || '[]');
-        const updated = [pred, ...existing.filter((p: any) => p.record_id !== pred.record_id)].slice(0, 30);
+        const hist = JSON.parse(localStorage.getItem('blazefinix_prediction_history') || '[]');
+        const updated = [pred, ...hist.filter((h: any) => h.record_id !== pred.record_id)];
         localStorage.setItem('blazefinix_prediction_history', JSON.stringify(updated));
-      } catch (e) {}
+      } catch (err) {}
 
-      // Smooth scroll to inline result
-      setTimeout(() => {
-        const el = document.getElementById('quantum-inference-result');
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    } catch (err) {
+      onPredictionComplete(pred);
+    } catch (err: any) {
       console.error('Prediction failed:', err);
+      setErrorMessage('Assessment pipeline execution failed. Please verify backend state.');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <MedicalDisclaimer compact />
 
-      {/* Header */}
-      <div className="glass-panel-elevated rounded-2xl p-6 border border-slate-800">
-        <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-            CLINICAL INFERENCE ENGINE
-          </span>
-          <span className="text-xs text-slate-400">Hybrid Classical + VQC Simulation</span>
-        </div>
-        <h1 className="text-xl font-bold text-white mt-1">New Patient Risk Assessment</h1>
-        <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-          Enter laboratory biomarkers or select a standardized synthetic research profile to evaluate disease risk using the verified 4-qubit Quantum-Classical hybrid model.
-        </p>
-
-        {/* 1-Click Demo Profiles */}
-        <div className="mt-5 pt-4 border-t border-slate-800">
-          <span className="text-xs font-semibold text-slate-300 block mb-2">
-            Instant 1-Click Research Profiles:
-          </span>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {demoCases.map((c: DemoCase) => (
-              <button
-                key={c.case_id}
-                type="button"
-                onClick={() => loadDemoProfile(c)}
-                className="p-3 rounded-xl bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800 text-left transition-all group"
-              >
-                <div className="text-xs font-bold text-white group-hover:text-indigo-300 flex items-center justify-between">
-                  <span>{c.label.split('(')[0]}</span>
-                  <span className="text-[10px] font-mono text-slate-400">{c.expected_risk}</span>
-                </div>
-                <div className="text-[11px] text-slate-400 mt-1 line-clamp-2">
-                  {c.description}
-                </div>
-              </button>
-            ))}
+      {/* Header Banner */}
+      <div className="clinical-card p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-cyan-800 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
+              NEW ASSESSMENT WORKSPACE
+            </span>
+            <span className="text-xs text-slate-500 font-mono">Record ID: {recordId}</span>
           </div>
+          <h1 className="text-lg font-bold text-slate-900 mt-1 tracking-tight">Run New Risk Assessment</h1>
+          <p className="text-xs text-slate-600 mt-0.5 max-w-2xl">
+            Upload clinical PDF lab report or manually enter patient vitals, metabolic markers, and lipids.
+          </p>
+        </div>
+
+        {/* PDF Quick Upload Button */}
+        <div className="relative shrink-0">
+          <input
+            type="file"
+            accept=".pdf"
+            onChange={handleFileUpload}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            title="Upload PDF Clinical Lab Report"
+          />
+          <button
+            type="button"
+            className="px-4 py-2 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+          >
+            <Upload className="w-4 h-4 text-cyan-700" />
+            <span>{extractingPdf ? 'Extracting Lab PDF...' : 'Upload Clinical PDF'}</span>
+          </button>
         </div>
       </div>
 
-      {/* Manual Clinical Biomarkers Form */}
-      <form onSubmit={handleExecutePrediction} className="glass-panel-elevated rounded-2xl p-4 sm:p-6 border border-slate-800 space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-          <div>
-            <h2 className="text-sm font-bold text-white">Biomarkers & Clinical Covariates</h2>
-            <p className="text-xs text-slate-400">All metrics are normalized and passed through the leakage-free preprocessor</p>
-          </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <span className="text-xs text-slate-400 shrink-0">Record ID:</span>
-            <input
-              type="text"
-              value={recordId}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRecordId(e.target.value)}
-              className="w-full sm:w-auto px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-white font-mono text-xs focus:outline-none focus:border-indigo-500"
-            />
-          </div>
+      {pdfSuccessMessage && (
+        <div className="p-3 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>{pdfSuccessMessage}</span>
         </div>
+      )}
 
-        {/* Feature Input Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 text-xs">
-          {Object.entries(features).map(([key, val]) => {
-            if (key === 'sex') {
-              return (
-                <div key={key} className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between">
-                  <label className="block text-slate-400 font-mono text-[11px] mb-1">
-                    sex
-                  </label>
-                  <div className="grid grid-cols-2 gap-2 mt-1">
-                    <button
-                      type="button"
-                      onClick={() => handleFeatureChange('sex', 1.0)}
-                      className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
-                        val === 1.0
-                          ? 'bg-indigo-600 text-white shadow-md'
-                          : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
-                      }`}
-                    >
-                      Male
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleFeatureChange('sex', 0.0)}
-                      className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
-                        val === 0.0
-                          ? 'bg-indigo-600 text-white shadow-md'
-                          : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
-                      }`}
-                    >
-                      Female
-                    </button>
-                  </div>
-                </div>
-              );
-            }
-            return (
-              <div key={key} className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-                <label className="block text-slate-400 font-mono text-[11px] mb-1">
-                  {key}
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  value={val}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFeatureChange(key, parseFloat(e.target.value) || 0)}
-                  className="w-full p-2 rounded-lg bg-slate-950 border border-slate-800 text-white font-mono text-xs focus:outline-none focus:border-indigo-500"
-                />
+      {errorMessage && (
+        <div className="p-3 rounded bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {/* Preset Research Profiles */}
+      <div className="clinical-card p-4 space-y-2">
+        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+          LOAD SAMPLE RESEARCH PROFILE:
+        </span>
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {FALLBACK_DEMO_CASES.map((c) => (
+            <button
+              key={c.case_id}
+              type="button"
+              onClick={() => loadDemoProfile(c)}
+              className="p-3 rounded bg-slate-50 border border-slate-200 hover:bg-slate-100 text-left transition-colors cursor-pointer group"
+            >
+              <div className="text-xs font-bold text-slate-900 group-hover:text-cyan-800 flex items-center justify-between">
+                <span>{c.case_id}</span>
+                <span className="text-[11px] font-mono text-slate-500">{c.expected_risk}</span>
               </div>
-            );
-          })}
+              <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">{c.description}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Grouped Clinical Form */}
+      <form onSubmit={handleExecuteAssessment} className="space-y-5">
+        {/* Section 1: Demographics & Vitals */}
+        <div className="clinical-card p-5 space-y-3">
+          <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2">
+            1. Patient Demographics & Vitals
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+            <div>
+              <label className="block text-slate-600 font-medium mb-1">Age (Years)</label>
+              <input
+                type="number"
+                value={vitals.age}
+                onChange={(e) => setVitals({ ...vitals, age: parseFloat(e.target.value) || 0 })}
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-600 font-medium mb-1">Biological Sex</label>
+              <select
+                value={vitals.sex}
+                onChange={(e) => setVitals({ ...vitals, sex: parseInt(e.target.value) })}
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 focus:outline-none focus:border-cyan-600"
+              >
+                <option value={1}>Male</option>
+                <option value={0}>Female</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-slate-600 font-medium mb-1">Systolic BP (mmHg)</label>
+              <input
+                type="number"
+                value={vitals.systolic_bp}
+                onChange={(e) => setVitals({ ...vitals, systolic_bp: parseFloat(e.target.value) || 0 })}
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-600 font-medium mb-1">Diastolic BP (mmHg)</label>
+              <input
+                type="number"
+                value={vitals.diastolic_bp}
+                onChange={(e) => setVitals({ ...vitals, diastolic_bp: parseFloat(e.target.value) || 0 })}
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Submit Button */}
-        <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-          <div className="text-xs text-slate-400 italic">
-            XGBoost feature selection will automatically isolate the top 4 features for the quantum register.
+        {/* Section 2: Glycemic & Inflammatory */}
+        <div className="clinical-card p-5 space-y-3">
+          <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2">
+            2. Glycemic & Inflammatory Biomarkers
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+            <div>
+              <label className="block text-slate-600 font-medium mb-1">Fasting Glucose (mg/dL)</label>
+              <input
+                type="number"
+                value={metabolic.fasting_glucose}
+                onChange={(e) => setMetabolic({ ...metabolic, fasting_glucose: parseFloat(e.target.value) || 0 })}
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-600 font-medium mb-1">HbA1c (%)</label>
+              <input
+                type="number"
+                step="0.1"
+                value={metabolic.hba1c}
+                onChange={(e) => setMetabolic({ ...metabolic, hba1c: parseFloat(e.target.value) || 0 })}
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-600 font-medium mb-1">hs-CRP (mg/L)</label>
+              <input
+                type="number"
+                step="0.1"
+                value={metabolic.hs_crp}
+                onChange={(e) => setMetabolic({ ...metabolic, hs_crp: parseFloat(e.target.value) || 0 })}
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-600 font-medium mb-1">eGFR (mL/min/1.73m²)</label>
+              <input
+                type="number"
+                value={metabolic.egfr}
+                onChange={(e) => setMetabolic({ ...metabolic, egfr: parseFloat(e.target.value) || 0 })}
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
+              />
+            </div>
           </div>
+        </div>
 
+        {/* Section 3: Lipid Profile */}
+        <div className="clinical-card p-5 space-y-3">
+          <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2">
+            3. Lipid Profile
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+            <div>
+              <label className="block text-slate-600 font-medium mb-1">Total Cholesterol (mg/dL)</label>
+              <input
+                type="number"
+                value={lipids.total_cholesterol}
+                onChange={(e) => setLipids({ ...lipids, total_cholesterol: parseFloat(e.target.value) || 0 })}
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-600 font-medium mb-1">LDL Cholesterol (mg/dL)</label>
+              <input
+                type="number"
+                value={lipids.ldl_cholesterol}
+                onChange={(e) => setLipids({ ...lipids, ldl_cholesterol: parseFloat(e.target.value) || 0 })}
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-600 font-medium mb-1">HDL Cholesterol (mg/dL)</label>
+              <input
+                type="number"
+                value={lipids.hdl_cholesterol}
+                onChange={(e) => setLipids({ ...lipids, hdl_cholesterol: parseFloat(e.target.value) || 0 })}
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-600 font-medium mb-1">Triglycerides (mg/dL)</label>
+              <input
+                type="number"
+                value={lipids.triglycerides}
+                onChange={(e) => setLipids({ ...lipids, triglycerides: parseFloat(e.target.value) || 0 })}
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Submit Actions */}
+        <div className="flex items-center justify-end gap-3 pt-2">
           <button
             type="submit"
             disabled={loading}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white shadow-lg shadow-indigo-600/30 transition-all active:scale-95 shrink-0"
+            className="px-6 py-2.5 rounded text-xs font-semibold bg-cyan-700 hover:bg-cyan-800 disabled:opacity-50 text-white flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
           >
-            <Cpu className={`w-4 h-4 shrink-0 ${loading ? 'animate-spin' : ''}`} />
-            <span>{loading ? 'Simulating Hybrid Pipeline...' : 'Generate AI Risk Prediction'}</span>
+            <Cpu className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>{loading ? 'Running Hybrid Pipeline...' : 'Run Risk Assessment'}</span>
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </form>
-
-      {/* Real Quantum Model Inline Output Dashboard */}
-      {inlineResult && (
-        <div
-          id="quantum-inference-result"
-          className="glass-panel-elevated rounded-2xl p-6 border border-indigo-500/40 bg-gradient-to-br from-slate-900 via-indigo-950/20 to-slate-900 space-y-6"
-        >
-          {/* Result Header */}
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between pb-4 border-b border-slate-800 gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  REAL QUANTUM-CLASSICAL INFERENCE READY
-                </span>
-                <span className="text-xs font-mono text-slate-400">ID: {inlineResult.record_id}</span>
-              </div>
-              <h2 className="text-lg font-bold text-white mt-1 flex items-center gap-2">
-                <Atom className="w-5 h-5 text-indigo-400" />
-                <span>Hybrid Quantum-Classical Risk Evaluation</span>
-              </h2>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => onPredictionComplete(inlineResult)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition-all active:scale-95"
-              >
-                <span>Open in Decision Screen</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Probability Comparison Gauges */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
-              <div className="text-xs text-slate-400 font-medium">Classical XGBoost Risk:</div>
-              <div className="text-2xl font-black font-mono text-indigo-400 mt-1">
-                {Math.round(inlineResult.classical_risk * 100)}%
-              </div>
-              <div className="w-full bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
-                <div
-                  className="bg-indigo-500 h-full rounded-full transition-all duration-700"
-                  style={{ width: `${Math.round(inlineResult.classical_risk * 100)}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-950/80 border border-purple-500/30">
-              <div className="text-xs text-purple-300 font-medium">Quantum VQC Expectation:</div>
-              <div className="text-2xl font-black font-mono text-purple-400 mt-1">
-                {Math.round(inlineResult.quantum_risk * 100)}%
-              </div>
-              <div className="w-full bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
-                <div
-                  className="bg-purple-500 h-full rounded-full transition-all duration-700"
-                  style={{ width: `${Math.round(inlineResult.quantum_risk * 100)}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-950/80 border border-emerald-500/40">
-              <div className="text-xs text-emerald-300 font-medium flex items-center justify-between">
-                <span>Hybrid Consensus Risk:</span>
-                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
-                  {inlineResult.risk_category}
-                </span>
-              </div>
-              <div className="text-2xl font-black font-mono text-emerald-400 mt-1">
-                {Math.round(inlineResult.hybrid_risk * 100)}%
-              </div>
-              <div className="w-full bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
-                <div
-                  className="bg-emerald-500 h-full rounded-full transition-all duration-700"
-                  style={{ width: `${Math.round(inlineResult.hybrid_risk * 100)}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 4-Qubit Quantum Register State & Bloch Angles */}
-          <div className="p-5 rounded-xl bg-slate-950/90 border border-indigo-500/30 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-2">
-                <Atom className="w-4 h-4 text-indigo-400" />
-                <span>4-Qubit Parameterized Register (RY Rotation Angle Encoding)</span>
-              </h3>
-              <span className="text-[11px] font-mono text-slate-400">
-                Fidelity: 99.82% • Depth: 4 • Entropy: 0.8412
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-              {[
-                { qubit: 0, feature: 'Systolic BP', angle: (features.systolic_bp / 200 * Math.PI).toFixed(3) },
-                { qubit: 1, feature: 'Glucose / A1c', angle: (features.fasting_glucose / 200 * Math.PI).toFixed(3) },
-                { qubit: 2, feature: 'LDL Cholesterol', angle: (features.ldl_cholesterol / 220 * Math.PI).toFixed(3) },
-                { qubit: 3, feature: 'hs-CRP / Age', angle: (features.hs_crp / 8 * Math.PI).toFixed(3) }
-              ].map((q) => (
-                <div key={q.qubit} className="p-3 rounded-lg bg-slate-900 border border-slate-800">
-                  <div className="text-purple-400 font-bold">|q{q.qubit}⟩ : {q.feature}</div>
-                  <div className="text-slate-300 mt-1">θ = {q.angle} rad</div>
-                  <div className="text-[10px] text-slate-500">RY(θ) • CNOT({q.qubit}, {(q.qubit + 1) % 4})</div>
-                </div>
-              ))}
-            </div>
-
-            {/* ASCII Quantum Circuit Layout */}
-            <div className="mt-3 p-3 rounded-lg bg-slate-900 border border-slate-800 font-mono text-[11px] text-indigo-200 overflow-x-auto">
-              <div>q0: ──[ RY({(features.systolic_bp / 200 * Math.PI).toFixed(2)}) ]──■───────────────X── M</div>
-              <div>q1: ──[ RY({(features.fasting_glucose / 200 * Math.PI).toFixed(2)}) ]──┼──■────────────┼── M</div>
-              <div>q2: ──[ RY({(features.ldl_cholesterol / 220 * Math.PI).toFixed(2)}) ]──┼──┼──■─────────┼── M</div>
-              <div>q3: ──[ RY({(features.hs_crp / 8 * Math.PI).toFixed(2)}) ]──X──┼──┼──■──────■── M</div>
-            </div>
-          </div>
-
-          {/* Live Oncogenic Driver Genes & Genomic Risk Telemetry */}
-          <div className="p-5 rounded-xl bg-slate-950/90 border border-emerald-500/30 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-2">
-                <Dna className="w-4 h-4 text-emerald-400" />
-                <span>Live Cancer Driver Genes & Chromosome Loci (GRCh38.p14)</span>
-              </h3>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                Ensembl & ClinVar Live
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-              {getGenesForRecord(inlineResult.record_id).map((gene) => (
-                <div key={gene.symbol} className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-indigo-300 text-sm">{gene.symbol}</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-950 text-emerald-400 border border-slate-800">
-                      {gene.chromosome}:{gene.locus}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-mono truncate" title={gene.canonical_transcript}>
-                    {gene.canonical_transcript} ({gene.exon_count} exons)
-                  </div>
-                  <div className="text-[11px] text-rose-400 font-bold font-mono">
-                    {gene.protein_change}
-                  </div>
-                  <div className="text-[10px] text-slate-400">
-                    ClinVar: <strong className="text-amber-300">{gene.clinvar_significance.split('/')[0]}</strong>
-                  </div>
-                  <div className="pt-1 border-t border-slate-800 text-[10px] font-mono text-purple-300 flex justify-between">
-                    <span>Quantum θ: {gene.vqc_phase_angle_rad} rad</span>
-                    <span>VAF: {gene.vaf_pct}%</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Top Attributions & Recommendations */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
-              <div className="font-bold text-slate-300 mb-2">SHAP Feature Driver Attributions:</div>
-              <div className="space-y-1.5">
-                {inlineResult.contributing_factors?.map((c, i) => (
-                  <div key={i} className="flex items-center justify-between text-slate-400 font-mono text-[11px]">
-                    <span>{c.feature}</span>
-                    <span className="text-indigo-300 font-bold">{c.importance_value > 0 ? '+' : ''}{c.importance_value.toFixed(3)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-col justify-between">
-              <div>
-                <div className="font-bold text-slate-300 mb-2">Clinical Decision-Support Recommendation:</div>
-                <p className="text-slate-300 leading-relaxed">
-                  {inlineResult.alert?.recommendation || 'Standard clinical lifestyle counseling and 6-month preventive biomarker screening.'}
-                </p>
-              </div>
-
-              {/* Direct PDF Downloads */}
-              <div className="mt-4 pt-3 border-t border-slate-800 flex flex-wrap items-center gap-2">
-                <a
-                  href={getReportPdfUrl(inlineResult.record_id)}
-                  download={`clinical_dossier_${inlineResult.record_id}.pdf`}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-md transition-all text-xs"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Clinical PDF</span>
-                </a>
-                <a
-                  href={getDoctorReportPdfUrl(inlineResult.record_id)}
-                  download={`physician_summary_${inlineResult.record_id}.pdf`}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-md transition-all text-xs"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Doctor PDF</span>
-                </a>
-                <a
-                  href={getPatientReportPdfUrl(inlineResult.record_id)}
-                  download={`patient_plain_${inlineResult.record_id}.pdf`}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold shadow-md transition-all text-xs"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Patient PDF</span>
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
+
+export default NewPredictionPage;

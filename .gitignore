@@ -65,3 +65,8 @@ wheels/
 # Frontend Vite
 app/frontend/dist/
 app/frontend/node_modules/
+
+
+
+.agents
+.agent

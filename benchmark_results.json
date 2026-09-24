@@ -1,0 +1,58 @@
+[
+  {
+    "qubit_count": 4,
+    "circuit_depth": 2,
+    "shots": 1024,
+    "execution_mode": "TRAINED_VQC_INFERENCE",
+    "theoretical_state_space": 16,
+    "device": "PennyLane default.qubit (CPU)",
+    "mean_execution_ms": 35.61,
+    "std_execution_ms": 5.17,
+    "min_execution_ms": 32.56,
+    "max_execution_ms": 45.91,
+    "sample_top_bitstring": "0000",
+    "observed_unique_states_in_shots": 5
+  },
+  {
+    "qubit_count": 6,
+    "circuit_depth": 2,
+    "shots": 1024,
+    "execution_mode": "TRAINED_VQC_INFERENCE",
+    "theoretical_state_space": 64,
+    "device": "PennyLane default.qubit (CPU)",
+    "mean_execution_ms": 39.4,
+    "std_execution_ms": 1.22,
+    "min_execution_ms": 38.11,
+    "max_execution_ms": 41.54,
+    "sample_top_bitstring": "000000",
+    "observed_unique_states_in_shots": 8
+  },
+  {
+    "qubit_count": 8,
+    "circuit_depth": 2,
+    "shots": 1024,
+    "execution_mode": "TRAINED_VQC_INFERENCE",
+    "theoretical_state_space": 256,
+    "device": "PennyLane default.qubit (CPU)",
+    "mean_execution_ms": 50.17,
+    "std_execution_ms": 6.67,
+    "min_execution_ms": 45.63,
+    "max_execution_ms": 63.18,
+    "sample_top_bitstring": "00000000",
+    "observed_unique_states_in_shots": 11
+  },
+  {
+    "qubit_count": 20,
+    "circuit_depth": 23,
+    "shots": 1024,
+    "execution_mode": "EXPERIMENTAL_FORWARD_EVALUATION",
+    "theoretical_state_space": 1048576,
+    "device": "PennyLane default.qubit (CPU)",
+    "mean_execution_ms": 2512.57,
+    "std_execution_ms": 50.02,
+    "min_execution_ms": 2444.09,
+    "max_execution_ms": 2570.77,
+    "sample_top_bitstring": "00111000010111011101",
+    "observed_unique_states_in_shots": 1020
+  }
+]

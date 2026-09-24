@@ -167,10 +167,10 @@ export const SimulationVideoSection: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Disclaimer Header */}
-      <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3 text-amber-300 text-xs">
-        <ShieldAlert className="w-5 h-5 flex-shrink-0 text-amber-400" />
+      <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3 text-slate-800 text-xs shadow-xs">
+        <ShieldAlert className="w-5 h-5 flex-shrink-0 text-amber-800" />
         <div>
-          <b>MANDATORY MEDICAL DISCLAIMER:</b> AI-generated risk assessment — not a final medical diagnosis. Final clinical decision remains with a qualified healthcare professional. This simulation demonstrates computational pipeline dynamics.
+          <b className="text-amber-950">MANDATORY MEDICAL DISCLAIMER:</b> <span className="text-slate-800 font-medium">AI-generated risk assessment — not a final medical diagnosis. Final clinical decision remains with a qualified healthcare professional. This simulation demonstrates computational pipeline dynamics.</span>
         </div>
       </div>
 

@@ -1,0 +1,52 @@
+{
+  "model_version": "Hybrid-VQC-v8Q-8419",
+  "dataset_name": "cardiometabolic_cohort.csv",
+  "qubits": 8,
+  "depth": 2,
+  "shots": 1024,
+  "feature_names": [
+    "age",
+    "sex",
+    "systolic_bp",
+    "diastolic_bp",
+    "fasting_glucose",
+    "hba1c",
+    "total_cholesterol",
+    "hdl_cholesterol",
+    "ldl_cholesterol",
+    "triglycerides",
+    "bmi",
+    "resting_heart_rate",
+    "smoking_status",
+    "physical_activity_hours",
+    "family_history_cad",
+    "hs_crp",
+    "egfr"
+  ],
+  "top_features": [
+    "ldl_cholesterol",
+    "fasting_glucose",
+    "egfr",
+    "systolic_bp",
+    "hba1c",
+    "age",
+    "hs_crp",
+    "diastolic_bp"
+  ],
+  "top_indices": [
+    8,
+    4,
+    16,
+    2,
+    5,
+    0,
+    15,
+    3
+  ],
+  "saved_at": "2026-09-14T15:06:59Z",
+  "metrics": {
+    "classical_roc_auc": 0.9401,
+    "quantum_roc_auc": 0.5098,
+    "hybrid_roc_auc": 0.9401
+  }
+}

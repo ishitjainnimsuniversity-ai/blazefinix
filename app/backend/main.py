@@ -27,13 +27,14 @@ async def lifespan(app: FastAPI):
     init_db()
     # 2. Ensure sample data cohorts exist
     save_sample_cohorts(SAMPLE_DATA_DIR)
-    # 3. Pre-train default baseline pipeline so demo and predictions run immediately
+    # 3. Load persisted model artifacts or train baseline pipeline
     try:
-        pipeline_service.train_full_pipeline(
-            dataset_name="cardiometabolic_cohort.csv",
-            top_k=4,
-            run_cv=False
-        )
+        if not pipeline_service.load_model_artifacts(qubits=4):
+            pipeline_service.train_full_pipeline(
+                dataset_name="cardiometabolic_cohort.csv",
+                top_k=4,
+                run_cv=False
+            )
     except Exception as e:
         print(f"Startup training warning: {e}")
     yield

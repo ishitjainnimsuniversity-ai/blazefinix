@@ -12,7 +12,6 @@ import { AuditLogsPage } from './pages/AuditLogsPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { CancerGenomicsPage } from './pages/CancerGenomicsPage';
-import { PermanentQrModal } from './components/PermanentQrModal';
 import { fetchAlerts } from './api';
 import { PredictionResult } from './types';
 
@@ -20,9 +19,7 @@ export const App: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<NavTab>('overview');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
-  const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false);
   const [pendingAlertsCount, setPendingAlertsCount] = useState<number>(0);
-  const [activeModelVersion, setActiveModelVersion] = useState<string>('Hybrid-VQC-v1.0');
   const [selectedRecordId, setSelectedRecordId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
@@ -47,7 +44,6 @@ export const App: React.FC = () => {
 
   function handlePredictionComplete(pred: PredictionResult) {
     setSelectedRecordId(pred.record_id);
-    setActiveModelVersion(pred.model_version);
     refreshAlertCount();
     setCurrentTab('decision_support');
   }
@@ -61,7 +57,6 @@ export const App: React.FC = () => {
         pendingAlertsCount={pendingAlertsCount}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        onOpenQr={() => setIsQrModalOpen(true)}
         isMobileOpen={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
       />
@@ -69,18 +64,10 @@ export const App: React.FC = () => {
       {/* Main Workspace Viewport */}
       <div className="flex-1 min-w-0 flex flex-col h-screen overflow-hidden">
         <Header
-          activeModelVersion={activeModelVersion}
           pendingAlertsCount={pendingAlertsCount}
           selectedRecordId={selectedRecordId}
           onNavigateToAlerts={() => setCurrentTab('alerts_review')}
-          onOpenQr={() => setIsQrModalOpen(true)}
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        />
-
-        {/* Permanent 24/7 Mobile QR Modal */}
-        <PermanentQrModal
-          isOpen={isQrModalOpen}
-          onClose={() => setIsQrModalOpen(false)}
         />
 
         <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-4 lg:p-6 bg-slate-50">

@@ -12,8 +12,7 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
-  Activity,
-  QrCode
+  Activity
 } from 'lucide-react';
 
 export type NavTab =
@@ -34,7 +33,6 @@ interface SidebarProps {
   pendingAlertsCount: number;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
-  onOpenQr?: () => void;
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
 }
@@ -45,7 +43,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   pendingAlertsCount,
   isCollapsed = false,
   onToggleCollapse,
-  onOpenQr,
   isMobileOpen = false,
   onCloseMobile
 }) => {
@@ -194,32 +191,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
         </div>
-
-        {/* 24/7 Mobile QR Card */}
-        {onOpenQr && !isCollapsed && (
-          <div className="px-2 pb-2">
-            <div
-              onClick={() => {
-                onOpenQr();
-                if (onCloseMobile) onCloseMobile();
-              }}
-              className="p-2.5 rounded bg-cyan-50 border border-cyan-200 hover:bg-cyan-100 cursor-pointer transition-colors group shadow-xs"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-cyan-900 flex items-center gap-1.5">
-                  <QrCode className="w-3.5 h-3.5 text-cyan-700 group-hover:scale-105 transition-transform" />
-                  Permanent QR
-                </span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-200 text-cyan-900 font-mono font-bold">
-                  24/7
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-600 mt-1 leading-tight">
-                Scan with phone to open mobile app anytime.
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Footer System Status */}
         <div className="p-3 border-t border-slate-200 bg-slate-50">

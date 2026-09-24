@@ -1,18 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
-  PlusCircle,
-  Play,
-  CheckCircle2,
-  FileSpreadsheet,
   Cpu,
   ArrowRight,
-  ShieldAlert,
   Download,
   Atom,
-  Layers,
-  Zap,
-  ExternalLink,
-  RotateCcw,
   Dna
 } from 'lucide-react';
 import { DemoCase, PredictionResult } from '../types';
@@ -33,7 +24,7 @@ interface NewPredictionPageProps {
 
 export const NewPredictionPage: React.FC<NewPredictionPageProps> = ({
   onPredictionComplete
-}) => {
+}: NewPredictionPageProps) => {
   const [demoCases, setDemoCases] = useState<DemoCase[]>(FALLBACK_DEMO_CASES);
   const [recordId, setRecordId] = useState(`R-${Math.floor(100000 + Math.random() * 900000)}`);
   const [loading, setLoading] = useState(false);
@@ -80,7 +71,7 @@ export const NewPredictionPage: React.FC<NewPredictionPageProps> = ({
   }
 
   function handleFeatureChange(key: string, val: number) {
-    setFeatures((prev) => ({ ...prev, [key]: val }));
+    setFeatures((prev: Record<string, number>) => ({ ...prev, [key]: val }));
   }
 
   async function handleExecutePrediction(e: React.FormEvent) {
@@ -133,7 +124,7 @@ export const NewPredictionPage: React.FC<NewPredictionPageProps> = ({
             Instant 1-Click Research Profiles:
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {demoCases.map((c) => (
+            {demoCases.map((c: DemoCase) => (
               <button
                 key={c.case_id}
                 type="button"
@@ -154,44 +145,79 @@ export const NewPredictionPage: React.FC<NewPredictionPageProps> = ({
       </div>
 
       {/* Manual Clinical Biomarkers Form */}
-      <form onSubmit={handleExecutePrediction} className="glass-panel-elevated rounded-2xl p-6 border border-slate-800 space-y-6">
+      <form onSubmit={handleExecutePrediction} className="glass-panel-elevated rounded-2xl p-4 sm:p-6 border border-slate-800 space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
           <div>
             <h2 className="text-sm font-bold text-white">Biomarkers & Clinical Covariates</h2>
             <p className="text-xs text-slate-400">All metrics are normalized and passed through the leakage-free preprocessor</p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Record ID:</span>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="text-xs text-slate-400 shrink-0">Record ID:</span>
             <input
               type="text"
               value={recordId}
-              onChange={(e) => setRecordId(e.target.value)}
-              className="px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-white font-mono text-xs focus:outline-none focus:border-indigo-500"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRecordId(e.target.value)}
+              className="w-full sm:w-auto px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-white font-mono text-xs focus:outline-none focus:border-indigo-500"
             />
           </div>
         </div>
 
         {/* Feature Input Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 text-xs">
-          {Object.entries(features).map(([key, val]) => (
-            <div key={key} className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-              <label className="block text-slate-400 font-mono text-[11px] mb-1">
-                {key}
-              </label>
-              <input
-                type="number"
-                step="any"
-                value={val}
-                onChange={(e) => handleFeatureChange(key, parseFloat(e.target.value) || 0)}
-                className="w-full p-2 rounded-lg bg-slate-950 border border-slate-800 text-white font-mono text-xs focus:outline-none focus:border-indigo-500"
-              />
-            </div>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 text-xs">
+          {Object.entries(features).map(([key, val]) => {
+            if (key === 'sex') {
+              return (
+                <div key={key} className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between">
+                  <label className="block text-slate-400 font-mono text-[11px] mb-1">
+                    sex
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => handleFeatureChange('sex', 1.0)}
+                      className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
+                        val === 1.0
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                      }`}
+                    >
+                      Male
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleFeatureChange('sex', 0.0)}
+                      className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
+                        val === 0.0
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                      }`}
+                    >
+                      Female
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <div key={key} className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                <label className="block text-slate-400 font-mono text-[11px] mb-1">
+                  {key}
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={val}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFeatureChange(key, parseFloat(e.target.value) || 0)}
+                  className="w-full p-2 rounded-lg bg-slate-950 border border-slate-800 text-white font-mono text-xs focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+            );
+          })}
         </div>
 
         {/* Submit Button */}
-        <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
           <div className="text-xs text-slate-400 italic">
             XGBoost feature selection will automatically isolate the top 4 features for the quantum register.
           </div>
@@ -199,9 +225,9 @@ export const NewPredictionPage: React.FC<NewPredictionPageProps> = ({
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white shadow-lg shadow-indigo-600/30 transition-all active:scale-95 whitespace-nowrap"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white shadow-lg shadow-indigo-600/30 transition-all active:scale-95 shrink-0"
           >
-            <Cpu className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <Cpu className={`w-4 h-4 shrink-0 ${loading ? 'animate-spin' : ''}`} />
             <span>{loading ? 'Simulating Hybrid Pipeline...' : 'Generate AI Risk Prediction'}</span>
           </button>
         </div>

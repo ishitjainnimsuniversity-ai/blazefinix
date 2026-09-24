@@ -25,6 +25,7 @@ import { PredictionResult } from './types';
 export const App: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [pendingAlertsCount, setPendingAlertsCount] = useState<number>(0);
   const [activeModelVersion, setActiveModelVersion] = useState<string>('Hybrid-VQC-v1.0');
   const [selectedRecordId, setSelectedRecordId] = useState<string | undefined>(undefined);
@@ -92,6 +93,8 @@ export const App: React.FC = () => {
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         onOpenQr={() => setIsQrModalOpen(true)}
+        isMobileOpen={isMobileMenuOpen}
+        onCloseMobile={() => setIsMobileMenuOpen(false)}
       />
 
       {/* Main Workspace Viewport */}
@@ -102,6 +105,7 @@ export const App: React.FC = () => {
           onRunDemo={handleRunFullDemo}
           isDemoRunning={isDemoRunning}
           onOpenQr={() => setIsQrModalOpen(true)}
+          onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />
 
         {/* Permanent 24/7 Mobile QR Modal */}
@@ -110,7 +114,7 @@ export const App: React.FC = () => {
           onClose={() => setIsQrModalOpen(false)}
         />
 
-        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-4 lg:p-6 bg-gradient-to-b from-slate-950 via-slate-900/40 to-slate-950">
+        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-3 sm:p-4 lg:p-6 bg-gradient-to-b from-slate-950 via-slate-900/40 to-slate-950">
           <div className="w-full max-w-7xl mx-auto pb-12 min-w-0">
             {currentTab === 'dashboard' && (
               <DashboardPage

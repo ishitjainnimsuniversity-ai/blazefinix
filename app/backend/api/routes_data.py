@@ -79,9 +79,10 @@ def fetch_ncbi_genomics(payload: NCBIGenomeRequest, db: Session = Depends(get_db
             rec.coding_genes = features["coding_genes"]
             rec.busco_completeness = features["busco_completeness"]
 
+        import uuid
         # Audit log
         db.add(AuditLogRecord(
-            log_id=f"AUD-{payload.accession[:8]}",
+            log_id=f"AUD-{uuid.uuid4().hex[:8].upper()}",
             user_role="RESEARCHER",
             action="NCBI_GENOMICS_FETCH",
             record_id=payload.accession,

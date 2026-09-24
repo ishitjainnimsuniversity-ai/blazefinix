@@ -4,23 +4,17 @@ import {
   ShieldAlert,
   AlertTriangle,
   CheckCircle2,
-  Clock,
-  Filter,
-  Check,
   ChevronRight,
-  Download,
   Search,
   RefreshCw,
-  SlidersHorizontal
+  Check
 } from 'lucide-react';
 import { AlertData } from '../types';
 import {
   fetchAlerts,
   acknowledgeAlert,
   triageAlert,
-  getReportPdfUrl,
-  getDoctorReportPdfUrl,
-  getPatientReportPdfUrl
+  getReportPdfUrl
 } from '../api';
 import { ALL_COHORT_ALERTS } from '../allAlertsData';
 import { MedicalDisclaimer } from '../components/MedicalDisclaimer';
@@ -78,101 +72,72 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onNavigateToDecision }) 
     }
   }
 
-  // Real-time counts across ALL 67 cohort alerts
   const critCount = ALL_COHORT_ALERTS.filter((a) => a.severity.toUpperCase() === 'CRITICAL').length;
   const highCount = ALL_COHORT_ALERTS.filter((a) => a.severity.toUpperCase() === 'HIGH').length;
-  const medCount = ALL_COHORT_ALERTS.filter((a) => a.severity.toUpperCase() === 'MEDIUM' || a.severity.toUpperCase() === 'MODERATE').length;
-  const lowCount = ALL_COHORT_ALERTS.filter((a) => a.severity.toUpperCase() === 'LOW' || a.severity.toUpperCase() === 'NORMAL').length;
 
-  // Filter alerts in memory by search term
   const displayedAlerts = alerts.filter((alt) => {
     if (!searchTerm.trim()) return true;
     const q = searchTerm.toLowerCase();
     return (
       alt.record_id.toLowerCase().includes(q) ||
       alt.alert_id.toLowerCase().includes(q) ||
-      alt.reason.toLowerCase().includes(q) ||
-      alt.recommendation.toLowerCase().includes(q) ||
-      alt.contributing_factors.some((f) => String(f).toLowerCase().includes(q))
+      alt.reason.toLowerCase().includes(q)
     );
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <MedicalDisclaimer compact />
 
-      {/* Header */}
-      <div className="glass-panel-elevated rounded-2xl p-6 border border-slate-800 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+      {/* Header Toolbar */}
+      <div className="clinical-card p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-              ALERT ENGINE
+            <span className="text-xs font-bold uppercase tracking-wider text-rose-800 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+              CLINICAL TRIAGE QUEUE
             </span>
-            <span className="text-xs text-slate-400">Complete Cohort Decision-Support Triage ({ALL_COHORT_ALERTS.length} Reports)</span>
+            <span className="text-xs text-slate-500 font-mono">{ALL_COHORT_ALERTS.length} Active Notifications</span>
           </div>
-          <h1 className="text-xl font-bold text-white mt-1">Clinical Risk Alerts Center</h1>
-          <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            Prioritized clinical alerts for all 67 tested patients and models. Filter by risk tier, review triage status, or open complete diagnostic dossiers.
+          <h1 className="text-lg font-bold text-slate-900 mt-1 tracking-tight">Clinical Alerts & Review Center</h1>
+          <p className="text-xs text-slate-600 mt-0.5 max-w-2xl">
+            Prioritized clinical notification table and physician review triage queue for evaluated records.
           </p>
         </div>
 
-        {/* Quick Cohort Severity Metrics */}
-        <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-          <div className="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300">
-            <span className="text-[10px] text-rose-400 block font-sans">CRITICAL</span>
-            <strong>{critCount} Cases</strong>
+        <div className="flex items-center gap-2 text-xs font-mono">
+          <div className="px-3 py-1 rounded bg-rose-50 border border-rose-200 text-rose-800">
+            <strong>{critCount} Critical</strong>
           </div>
-          <div className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300">
-            <span className="text-[10px] text-amber-400 block font-sans">HIGH RISK</span>
-            <strong>{highCount} Cases</strong>
-          </div>
-          <div className="px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300">
-            <span className="text-[10px] text-indigo-400 block font-sans">MODERATE</span>
-            <strong>{medCount} Cases</strong>
-          </div>
-          <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
-            <span className="text-[10px] text-emerald-400 block font-sans">LOW RISK</span>
-            <strong>{lowCount} Cases</strong>
+          <div className="px-3 py-1 rounded bg-amber-50 border border-amber-200 text-amber-800">
+            <strong>{highCount} High Risk</strong>
           </div>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="glass-panel rounded-2xl p-4 border border-slate-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-xs">
-        <div className="relative flex-1">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+      {/* Filter Toolbar */}
+      <div className="clinical-card p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
           <input
             type="text"
-            placeholder="Search all 67 alerts by Record ID, biomarker, clinical reason..."
+            placeholder="Search by Patient ID or Reason..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:border-indigo-500"
+            className="w-full pl-9 pr-3 py-2 rounded bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-cyan-600"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <select
             value={severityFilter}
             onChange={(e) => setSeverityFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 text-xs focus:outline-none font-medium"
+            className="px-3 py-2 rounded bg-slate-50 border border-slate-300 text-slate-800 text-xs font-medium"
           >
-            <option value="ALL">All Severities ({ALL_COHORT_ALERTS.length})</option>
-            <option value="CRITICAL">Critical Only ({critCount})</option>
-            <option value="HIGH">High Risk ({highCount})</option>
-            <option value="MEDIUM">Medium / Moderate ({medCount})</option>
-            <option value="LOW">Low Risk ({lowCount})</option>
-          </select>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 text-xs focus:outline-none font-medium"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="PENDING">Pending Review</option>
-            <option value="REVIEWED">Reviewed</option>
-            <option value="ESCALATED">Escalated</option>
-            <option value="CLOSED">Closed</option>
+            <option value="ALL">All Severities</option>
+            <option value="CRITICAL">Critical</option>
+            <option value="HIGH">High Risk</option>
+            <option value="MEDIUM">Moderate Risk</option>
+            <option value="LOW">Low Risk</option>
           </select>
 
           <button
@@ -181,11 +146,9 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onNavigateToDecision }) 
               setSeverityFilter('ALL');
               setStatusFilter('ALL');
               setSearchTerm('');
-              localStorage.removeItem('blazefinix_alerts');
               loadAlerts();
             }}
-            className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5 transition-colors"
-            title="Reset filters to view all 67 alerts"
+            className="px-3 py-2 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Reset</span>
@@ -194,192 +157,101 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onNavigateToDecision }) 
       </div>
 
       {actionSuccess && (
-        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
+        <div className="p-3 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             <span>{actionSuccess}</span>
           </div>
-          <button onClick={() => setActionSuccess(null)} className="text-emerald-400 hover:text-white">✕</button>
+          <button onClick={() => setActionSuccess(null)} className="text-emerald-700 hover:text-slate-900">✕</button>
         </div>
       )}
 
-      {/* Alert Cards List */}
-      <div className="space-y-3">
-        <div className="text-xs text-slate-400 px-1 flex items-center justify-between">
-          <span>Showing <strong>{displayedAlerts.length}</strong> of <strong>{ALL_COHORT_ALERTS.length}</strong> clinical alerts:</span>
-          {searchTerm && (
-            <span className="text-indigo-400">Filtering by "{searchTerm}"</span>
-          )}
+      {/* Dense Clinical Alert Table */}
+      <div className="clinical-card p-4">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs font-sans">
+            <thead>
+              <tr>
+                <th className="clinical-table-header">Patient ID</th>
+                <th className="clinical-table-header">Severity</th>
+                <th className="clinical-table-header">Risk Score</th>
+                <th className="clinical-table-header">Clinical Reason & Triage</th>
+                <th className="clinical-table-header">Status</th>
+                <th className="clinical-table-header text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {displayedAlerts.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-500">
+                    No clinical alerts match current filter criteria.
+                  </td>
+                </tr>
+              ) : (
+                displayedAlerts.map((alt) => (
+                  <tr key={alt.alert_id} className="hover:bg-slate-50 transition-colors">
+                    <td className="clinical-table-cell font-bold font-mono text-slate-900">{alt.record_id}</td>
+                    <td className="clinical-table-cell">
+                      <span
+                        className={
+                          alt.severity === 'CRITICAL'
+                            ? 'clinical-badge-high'
+                            : alt.severity === 'HIGH'
+                            ? 'clinical-badge-high'
+                            : 'clinical-badge-moderate'
+                        }
+                      >
+                        {alt.severity}
+                      </span>
+                    </td>
+                    <td className="clinical-table-cell font-bold font-mono text-slate-800">
+                      {Math.round(alt.risk_score * 100)}%
+                    </td>
+                    <td className="clinical-table-cell text-slate-700 max-w-md">
+                      <div className="line-clamp-1 font-semibold">{alt.reason}</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">{alt.recommendation}</div>
+                    </td>
+                    <td className="clinical-table-cell">
+                      <select
+                        value={alt.status}
+                        onChange={(e) => handleTriage(alt.alert_id, e.target.value)}
+                        className="px-2 py-1 rounded bg-slate-50 border border-slate-300 text-slate-800 text-xs font-mono focus:outline-none"
+                      >
+                        <option value="PENDING">PENDING</option>
+                        <option value="REVIEWED">REVIEWED</option>
+                        <option value="ESCALATED">ESCALATED</option>
+                        <option value="CLOSED">CLOSED</option>
+                      </select>
+                    </td>
+                    <td className="clinical-table-cell text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => onNavigateToDecision(alt.record_id)}
+                          className="px-2.5 py-1 rounded bg-cyan-700 hover:bg-cyan-800 text-white text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <span>Open Case</span>
+                          <ChevronRight className="w-3 h-3" />
+                        </button>
+                        {!alt.acknowledged ? (
+                          <button
+                            onClick={() => handleAcknowledge(alt.alert_id)}
+                            className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium border border-slate-300 transition-colors cursor-pointer"
+                          >
+                            Acknowledge
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-emerald-700 font-mono font-bold flex items-center gap-1">
+                            <Check className="w-3 h-3" /> Ack'd
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-
-        {displayedAlerts.length === 0 ? (
-          <div className="glass-panel rounded-2xl p-12 text-center text-xs text-slate-400 space-y-3">
-            <p>No clinical alerts match the selected priority filters.</p>
-            <button
-              onClick={() => {
-                setSeverityFilter('ALL');
-                setStatusFilter('ALL');
-                setSearchTerm('');
-                localStorage.removeItem('blazefinix_alerts');
-                loadAlerts();
-              }}
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-all shadow-md"
-            >
-              Reset Filters & Show All 67 Alerts
-            </button>
-          </div>
-        ) : (
-          displayedAlerts.map((alt) => (
-            <div
-              key={alt.alert_id}
-              className="glass-panel rounded-xl p-5 border border-slate-800 hover:border-slate-700 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
-            >
-              <div className="flex items-start gap-3.5 flex-1">
-                <div
-                  className={`p-2.5 rounded-xl mt-0.5 shrink-0 ${
-                    alt.severity === 'CRITICAL'
-                      ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
-                      : alt.severity === 'HIGH'
-                      ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
-                      : alt.severity === 'MEDIUM'
-                      ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30'
-                      : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                  }`}
-                >
-                  <ShieldAlert className="w-5 h-5" />
-                </div>
-
-                <div className="space-y-1 flex-1">
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    <span className="text-sm font-bold text-white font-mono">{alt.record_id}</span>
-                    <span
-                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                        alt.severity === 'CRITICAL'
-                          ? 'bg-rose-500/20 text-rose-300'
-                          : alt.severity === 'HIGH'
-                          ? 'bg-amber-500/20 text-amber-300'
-                          : alt.severity === 'MEDIUM'
-                          ? 'bg-indigo-500/20 text-indigo-300'
-                          : 'bg-emerald-500/20 text-emerald-300'
-                      }`}
-                    >
-                      {alt.severity}
-                    </span>
-                    <span className="text-xs text-slate-400 font-mono">
-                      Risk: {Math.round(alt.risk_score * 100)}%
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-mono">
-                      ID: {alt.alert_id}
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-slate-300">{alt.reason}</p>
-
-                  <div className="text-xs text-slate-400">
-                    <strong className="text-slate-300">Action: </strong>
-                    <span>{alt.recommendation}</span>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-slate-500">
-                    <span>
-                      Contributing:{' '}
-                      {Array.isArray(alt.contributing_factors) && alt.contributing_factors.length > 0
-                        ? alt.contributing_factors
-                            .slice(0, 3)
-                            .map((f: any) =>
-                              typeof f === 'string'
-                                ? f
-                                : `${f.feature || ''}${f.patient_value ? ` (${f.patient_value})` : ''}`
-                            )
-                            .join(', ')
-                        : 'Biomarker profile'}
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {new Date(alt.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons: Open Case + All 3 PDF Downloads + Acknowledge + Status */}
-              <div className="flex flex-wrap items-center gap-1.5 sm:self-center self-end shrink-0">
-                <button
-                  type="button"
-                  onClick={() => onNavigateToDecision(alt.record_id)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all flex items-center gap-1 whitespace-nowrap shadow-md shadow-indigo-600/30"
-                  title="Open this patient dossier directly in Clinical Decision Studio"
-                >
-                  <span>Open Case</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-
-                <a
-                  href={getReportPdfUrl(alt.record_id)}
-                  download={`clinical_decision_report_${alt.record_id}.pdf`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-all flex items-center gap-1 shadow-sm whitespace-nowrap"
-                  title="Download publication-grade Clinical Decision Support PDF"
-                >
-                  <Download className="w-3 h-3" />
-                  <span>Clinical</span>
-                </a>
-
-                <a
-                  href={getDoctorReportPdfUrl(alt.record_id)}
-                  download={`doctor_clinical_report_${alt.record_id}.pdf`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-indigo-700 hover:bg-indigo-600 text-white transition-all flex items-center gap-1 shadow-sm whitespace-nowrap"
-                  title="Download Physician / Doctor Detailed Clinical Dossier PDF"
-                >
-                  <Download className="w-3 h-3" />
-                  <span>Doctor</span>
-                </a>
-
-                <a
-                  href={getPatientReportPdfUrl(alt.record_id)}
-                  download={`patient_health_summary_${alt.record_id}.pdf`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-teal-600 hover:bg-teal-500 text-white transition-all flex items-center gap-1 shadow-sm whitespace-nowrap"
-                  title="Download Plain-Language Patient Summary PDF"
-                >
-                  <Download className="w-3 h-3" />
-                  <span>Patient</span>
-                </a>
-
-                {!alt.acknowledged ? (
-                  <button
-                    type="button"
-                    onClick={() => handleAcknowledge(alt.alert_id)}
-                    className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all whitespace-nowrap"
-                  >
-                    Acknowledge
-                  </button>
-                ) : (
-                  <span className="text-[11px] px-2 py-1.5 rounded bg-slate-900 text-emerald-400 border border-slate-800 flex items-center gap-1 whitespace-nowrap">
-                    <Check className="w-3 h-3" />
-                    <span>Acknowledged</span>
-                  </span>
-                )}
-
-                <select
-                  value={alt.status}
-                  onChange={(e) => handleTriage(alt.alert_id, e.target.value)}
-                  className="px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-slate-300 focus:outline-none"
-                >
-                  <option value="PENDING">PENDING</option>
-                  <option value="REVIEWED">REVIEWED</option>
-                  <option value="ESCALATED">ESCALATED</option>
-                  <option value="CLOSED">CLOSED</option>
-                </select>
-              </div>
-            </div>
-          ))
-        )}
       </div>
     </div>
   );

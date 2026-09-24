@@ -14,44 +14,23 @@ class DataQualityMetric(BaseModel):
     duplicate_records_count: int
     duplicate_records_pct: float
     class_distribution: Dict[str, int]
-    quality_score: int  # 0 to 100
-    quality_grade: str  # Excellent, Good, Acceptable, Poor
+    quality_score: int
+    quality_grade: str
     outliers_detected: int
     recommendation: str
-
-class PatientRecordCreate(BaseModel):
-    record_id: Optional[str] = None
-    cohort_name: Optional[str] = "General Clinical Cohort"
-    age: float
-    sex: str
-    features: Dict[str, float]
-    target_label: Optional[int] = None
-
-class PatientRecordResponse(BaseModel):
-    record_id: str
-    cohort_name: str
-    age: Optional[float]
-    sex: Optional[str]
-    features: Dict[str, Any]
-    target_label: Optional[int]
-    split_type: str
-    created_at: datetime
 
 class ContributingFactor(BaseModel):
     feature: str
     importance_value: float
-    contribution: str  # High positive, Moderate positive, Neutral, Protective
+    contribution: str
     clinical_note: str
+    patient_value: Optional[Any] = None
 
 class QuantumConfig(BaseModel):
-    qubits: int = Field(default=4, ge=2, le=12)
-    circuit_depth: int = Field(default=2, ge=1, le=8)
-    shots: int = Field(default=512, ge=100, le=4096)
-    feature_map_type: str = "ZZFeatureMap"  # ZZFeatureMap, AngleEncoding, PauliFeatureMap
-    ansatz_type: str = "RealAmplitudes"      # RealAmplitudes, EfficientSU2
-    backend_name: str = "AerSimulator"       # AerSimulator, StatevectorSimulator, PennyLaneDefault
-    optimizer: str = "COBYLA"                # COBYLA, SPSA, ADAM
-    max_iterations: int = 40
+    qubits: int = Field(default=4, ge=2, le=10)
+    circuit_depth: int = Field(default=2, ge=1, le=6)
+    shots: int = Field(default=1024, ge=100, le=4096)
+    backend_name: str = "PennyLane.default.qubit"
 
 class ModelTrainRequest(BaseModel):
     dataset_name: str = "cardiometabolic_cohort.csv"
@@ -62,68 +41,19 @@ class ModelTrainRequest(BaseModel):
     cv_folds: int = Field(default=5, ge=3, le=10)
     quantum_config: Optional[QuantumConfig] = None
 
-class ModelMetrics(BaseModel):
-    accuracy: float
-    precision: float
-    recall: float
-    sensitivity: float
-    specificity: float
-    f1_score: float
-    roc_auc: float
-    pr_auc: float
-    training_time_seconds: float
-    inference_time_ms: float
-    cv_roc_auc_mean: Optional[float] = None
-    cv_roc_auc_std: Optional[float] = None
-
-class ModelComparisonResult(BaseModel):
-    model_name: str
-    architecture: str
-    metrics: ModelMetrics
-    generalization_gap: float  # Train AUC - Val AUC
-    overfitting_status: str     # Healthy, Moderate Gap, Potential Overfitting
-    notes: str
-
-class TrainingSummaryResponse(BaseModel):
-    task_id: str
-    dataset_name: str
-    total_samples: int
-    train_samples: int
-    test_samples: int
-    top_features: List[Dict[str, Any]]
-    classical_baseline_metrics: ModelMetrics
-    quantum_vqc_metrics: ModelMetrics
-    hybrid_metrics: ModelMetrics
-    model_comparisons: List[ModelComparisonResult]
-    best_classical_model: str
-    best_qml_model: str
-    best_hybrid_model: str
-    scientific_summary: str
+class QuantumSimulationRequest(BaseModel):
+    features: Dict[str, float]
+    qubits: int = Field(default=4, ge=2, le=10)
+    depth: int = Field(default=2, ge=1, le=6)
+    shots: int = Field(default=1024, ge=64, le=4096)
 
 class PredictionRequest(BaseModel):
     record_id: Optional[str] = None
     features: Dict[str, float]
-    model_version: Optional[str] = "Hybrid-VQC-v1.0"
+    qubits: Optional[int] = Field(default=None, ge=2, le=10)
+    shots: Optional[int] = Field(default=1024, ge=64, le=4096)
+    model_version: Optional[str] = None
     quantum_config: Optional[QuantumConfig] = None
-
-class PredictionResponse(BaseModel):
-    prediction_id: str
-    record_id: str
-    model_version: str
-    classical_risk: float
-    quantum_risk: Optional[float]
-    hybrid_risk: float
-    risk_category: str  # Low Risk, Moderate Risk, High Risk, Very High Risk
-    confidence: str      # High, Moderate, Low
-    uncertainty_score: float
-    contributing_factors: List[ContributingFactor]
-    explanation_summary: str
-    alert_triggered: bool
-    alert_id: Optional[str] = None
-    alert_severity: Optional[str] = None
-    clinical_recommendation: str
-    disclaimer: str = "AI-generated risk assessment — not a final medical diagnosis. Final clinical decision remains with a qualified healthcare professional."
-    timestamp: datetime
 
 class AlertAcknowledgeRequest(BaseModel):
     clinician_name: str
@@ -132,7 +62,7 @@ class AlertAcknowledgeRequest(BaseModel):
 class DoctorFeedbackCreate(BaseModel):
     alert_id: Optional[str] = None
     record_id: str
-    agreement: str  # AGREE, PARTIAL, DISAGREE, NEEDS_REVIEW
+    agreement: str
     clinical_notes: str
     recommended_action: Optional[str] = "Scheduled for follow-up testing"
     reviewer_name: str
@@ -140,23 +70,16 @@ class DoctorFeedbackCreate(BaseModel):
 
 class DoctorFeedbackResponse(BaseModel):
     feedback_id: str
-    alert_id: Optional[str]
+    alert_id: Optional[str] = None
     record_id: str
     agreement: str
     clinical_notes: str
-    recommended_action: Optional[str]
+    recommended_action: Optional[str] = None
     reviewer_name: str
-    reviewed_at: datetime
-    status_message: str = "Feedback stored securely in research repository. Not directly deployed to production weights."
-
-class AuditLogResponse(BaseModel):
-    log_id: str
-    timestamp: datetime
-    user_role: str
-    action: str
-    record_id: Optional[str]
-    details: Dict[str, Any]
+    reviewed_at: Optional[datetime] = None
+    status_message: str
 
 class NCBIGenomeRequest(BaseModel):
-    accession: str = "GCF_000001405.40"  # GRCh38 human reference genome assembly
+    accession: str = "GCF_000001405.40"
     enrich_risk_features: bool = True
+

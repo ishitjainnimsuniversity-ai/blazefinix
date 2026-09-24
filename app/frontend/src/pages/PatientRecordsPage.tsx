@@ -34,21 +34,21 @@ export const PatientRecordsPage: React.FC<PatientRecordsPageProps> = ({ onSelect
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <MedicalDisclaimer compact />
 
       {/* Header Toolbar */}
       <div className="clinical-card p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="clinical-badge bg-teal-500/20 text-teal-300 border border-teal-500/30">
-              COHORT DIRECTORY
+            <span className="text-xs font-bold uppercase tracking-wider text-cyan-800 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
+              RESEARCH COHORT DIRECTORY
             </span>
-            <span className="text-xs text-slate-400">De-identified Patient Records</span>
+            <span className="text-xs text-slate-500 font-mono">TCGA / Synthetic Dataset Records</span>
           </div>
-          <h1 className="text-xl font-bold text-white mt-1 tracking-tight">Evaluated Patient Directory</h1>
-          <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            Historical cohort assessments, evaluated risk scores, and clinical report exports.
+          <h1 className="text-lg font-bold text-slate-900 mt-1 tracking-tight">Evaluated Cohort Dataset Directory</h1>
+          <p className="text-xs text-slate-600 mt-0.5 max-w-2xl">
+            De-identified research cohort records, hybrid risk probabilities, and clinical report exports.
           </p>
         </div>
 
@@ -59,7 +59,7 @@ export const PatientRecordsPage: React.FC<PatientRecordsPageProps> = ({ onSelect
             placeholder="Search Record ID or Risk..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-teal-500"
+            className="w-full pl-9 pr-3 py-2 rounded bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-cyan-600"
           />
         </div>
       </div>
@@ -70,59 +70,59 @@ export const PatientRecordsPage: React.FC<PatientRecordsPageProps> = ({ onSelect
           <table className="w-full text-left text-xs font-sans">
             <thead>
               <tr>
-                <th className="clinical-table-header">Patient Record ID</th>
+                <th className="clinical-table-header">Dataset Record ID</th>
                 <th className="clinical-table-header">Risk Stratification</th>
-                <th className="clinical-table-header">Risk Score</th>
+                <th className="clinical-table-header">Hybrid Risk Score</th>
                 <th className="clinical-table-header">Top Biomarker Driver</th>
                 <th className="clinical-table-header">Model Version</th>
                 <th className="clinical-table-header text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400">
-                    No evaluated patient records match search query.
+                  <td colSpan={6} className="py-8 text-center text-slate-500">
+                    No evaluated cohort records match search query.
                   </td>
                 </tr>
               ) : (
                 filtered.map((r) => (
-                  <tr key={r.prediction_id || r.record_id} className="hover:bg-slate-800/60 transition-colors">
-                    <td className="clinical-table-cell font-bold font-mono text-white">{r.record_id}</td>
+                  <tr key={r.prediction_id || r.record_id} className="hover:bg-slate-50 transition-colors">
+                    <td className="clinical-table-cell font-bold font-mono text-slate-900">{r.record_id}</td>
                     <td className="clinical-table-cell">
                       <span
-                        className={`px-2 py-0.5 rounded text-[11px] font-semibold uppercase ${
+                        className={
                           r.risk_category.includes('High')
-                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                            ? 'clinical-badge-high'
                             : r.risk_category.includes('Moderate')
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        }`}
+                            ? 'clinical-badge-moderate'
+                            : 'clinical-badge-low'
+                        }
                       >
                         {r.risk_category}
                       </span>
                     </td>
-                    <td className="clinical-table-cell font-bold font-mono text-slate-200">
+                    <td className="clinical-table-cell font-bold font-mono text-slate-800">
                       {Math.round(r.hybrid_risk * 100)}%
                     </td>
-                    <td className="clinical-table-cell font-mono text-slate-300">{r.top_factor || 'HbA1c / BP'}</td>
-                    <td className="clinical-table-cell text-slate-400 font-mono text-[11px]">{r.model_version}</td>
+                    <td className="clinical-table-cell font-mono text-slate-700">{r.top_factor || 'HbA1c / BP'}</td>
+                    <td className="clinical-table-cell text-slate-500 font-mono text-[11px]">{r.model_version}</td>
                     <td className="clinical-table-cell text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => onSelectRecord(r.record_id)}
-                          className="px-2.5 py-1 rounded bg-teal-600 hover:bg-teal-500 text-white text-[11px] font-medium flex items-center gap-1 transition-colors"
+                          className="px-2.5 py-1 rounded bg-cyan-700 hover:bg-cyan-800 text-white text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                         >
-                          <span>Open Patient</span>
+                          <span>Open Case</span>
                           <ChevronRight className="w-3 h-3" />
                         </button>
                         <a
                           href={getReportPdfUrl(r.record_id)}
                           download={`clinical_report_${r.record_id}.pdf`}
-                          className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium flex items-center gap-1 border border-slate-700 transition-colors"
+                          className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium flex items-center gap-1 border border-slate-300 transition-colors"
                           title="Download Clinical Report PDF"
                         >
-                          <Download className="w-3 h-3 text-teal-400" />
+                          <Download className="w-3 h-3 text-cyan-700" />
                           <span>PDF</span>
                         </a>
                       </div>

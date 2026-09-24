@@ -5,8 +5,7 @@ import {
   ArrowRight,
   AlertTriangle,
   Upload,
-  CheckCircle2,
-  FileText
+  CheckCircle2
 } from 'lucide-react';
 import { DemoCase, PredictionResult } from '../types';
 import {
@@ -84,7 +83,7 @@ export const NewPredictionPage: React.FC<NewPredictionPageProps> = ({
     setErrorMessage(null);
     try {
       const extracted = await uploadPatientReportPdfApi(file);
-      setPdfSuccessMessage(`Extracted parameters from ${file.name} successfully.`);
+      setPdfSuccessMessage(`Extracted parameters from ${file.name} successfully. Please review extracted values below.`);
       if (extracted.extracted_data) {
         const d = extracted.extracted_data;
         if (d.age) setVitals((v) => ({ ...v, age: d.age }));
@@ -126,26 +125,26 @@ export const NewPredictionPage: React.FC<NewPredictionPageProps> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <MedicalDisclaimer compact />
 
       {/* Header Banner */}
       <div className="clinical-card p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="clinical-badge bg-teal-500/20 text-teal-300 border border-teal-500/30">
+            <span className="text-xs font-bold uppercase tracking-wider text-cyan-800 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
               NEW ASSESSMENT WORKSPACE
             </span>
-            <span className="text-xs text-slate-400 font-mono">ID: {recordId}</span>
+            <span className="text-xs text-slate-500 font-mono">Record ID: {recordId}</span>
           </div>
-          <h1 className="text-xl font-bold text-white mt-1 tracking-tight">Run New Patient Risk Assessment</h1>
-          <p className="text-xs text-slate-400 mt-1 max-w-2xl">
+          <h1 className="text-lg font-bold text-slate-900 mt-1 tracking-tight">Run New Risk Assessment</h1>
+          <p className="text-xs text-slate-600 mt-0.5 max-w-2xl">
             Upload clinical PDF lab report or manually enter patient vitals, metabolic markers, and lipids.
           </p>
         </div>
 
         {/* PDF Quick Upload Button */}
-        <div className="relative">
+        <div className="relative shrink-0">
           <input
             type="file"
             accept=".pdf"
@@ -155,32 +154,32 @@ export const NewPredictionPage: React.FC<NewPredictionPageProps> = ({
           />
           <button
             type="button"
-            className="px-4 py-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium flex items-center gap-2 transition-colors"
+            className="px-4 py-2 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Upload className="w-4 h-4 text-teal-400" />
+            <Upload className="w-4 h-4 text-cyan-700" />
             <span>{extractingPdf ? 'Extracting Lab PDF...' : 'Upload Clinical PDF'}</span>
           </button>
         </div>
       </div>
 
       {pdfSuccessMessage && (
-        <div className="p-3 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <div className="p-3 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{pdfSuccessMessage}</span>
         </div>
       )}
 
       {errorMessage && (
-        <div className="p-3 rounded bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-rose-400" />
+        <div className="p-3 rounded bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
 
-      {/* Preset Cohort Case Buttons */}
+      {/* Preset Research Profiles */}
       <div className="clinical-card p-4 space-y-2">
-        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-          Load Sample Research Case Profile:
+        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+          Load Sample Research Profile:
         </span>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {FALLBACK_DEMO_CASES.map((c) => (
@@ -188,154 +187,154 @@ export const NewPredictionPage: React.FC<NewPredictionPageProps> = ({
               key={c.case_id}
               type="button"
               onClick={() => loadDemoProfile(c)}
-              className="p-3 rounded bg-slate-900 border border-slate-700/80 hover:border-slate-600 text-left transition-colors group"
+              className="p-3 rounded bg-slate-50 border border-slate-200 hover:bg-slate-100 text-left transition-colors cursor-pointer group"
             >
-              <div className="text-xs font-bold text-white group-hover:text-teal-300 flex items-center justify-between">
+              <div className="text-xs font-bold text-slate-900 group-hover:text-cyan-800 flex items-center justify-between">
                 <span>{c.case_id}</span>
-                <span className="text-[11px] font-mono text-slate-400">{c.expected_risk}</span>
+                <span className="text-[11px] font-mono text-slate-500">{c.expected_risk}</span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">{c.description}</p>
+              <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">{c.description}</p>
             </button>
           ))}
         </div>
       </div>
 
       {/* Grouped Clinical Form */}
-      <form onSubmit={handleExecuteAssessment} className="space-y-6">
-        {/* Section 1: Patient Demographics & Vitals */}
-        <div className="clinical-card p-5 space-y-4">
-          <h2 className="text-sm font-bold text-white border-b border-slate-700/80 pb-2">
+      <form onSubmit={handleExecuteAssessment} className="space-y-5">
+        {/* Section 1: Demographics & Vitals */}
+        <div className="clinical-card p-5 space-y-3">
+          <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2">
             1. Patient Demographics & Vitals
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Age (Years)</label>
+              <label className="block text-slate-600 font-medium mb-1">Age (Years)</label>
               <input
                 type="number"
                 value={vitals.age}
                 onChange={(e) => setVitals({ ...vitals, age: parseFloat(e.target.value) || 0 })}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white font-mono"
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
               />
             </div>
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Biological Sex</label>
+              <label className="block text-slate-600 font-medium mb-1">Biological Sex</label>
               <select
                 value={vitals.sex}
                 onChange={(e) => setVitals({ ...vitals, sex: parseInt(e.target.value) })}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white"
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 focus:outline-none focus:border-cyan-600"
               >
                 <option value={1}>Male</option>
                 <option value={0}>Female</option>
               </select>
             </div>
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Systolic BP (mmHg)</label>
+              <label className="block text-slate-600 font-medium mb-1">Systolic BP (mmHg)</label>
               <input
                 type="number"
                 value={vitals.systolic_bp}
                 onChange={(e) => setVitals({ ...vitals, systolic_bp: parseFloat(e.target.value) || 0 })}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white font-mono"
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
               />
             </div>
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Diastolic BP (mmHg)</label>
+              <label className="block text-slate-600 font-medium mb-1">Diastolic BP (mmHg)</label>
               <input
                 type="number"
                 value={vitals.diastolic_bp}
                 onChange={(e) => setVitals({ ...vitals, diastolic_bp: parseFloat(e.target.value) || 0 })}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white font-mono"
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
               />
             </div>
           </div>
         </div>
 
-        {/* Section 2: Glycemic & Renal Function */}
-        <div className="clinical-card p-5 space-y-4">
-          <h2 className="text-sm font-bold text-white border-b border-slate-700/80 pb-2">
+        {/* Section 2: Glycemic & Inflammatory */}
+        <div className="clinical-card p-5 space-y-3">
+          <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2">
             2. Glycemic & Inflammatory Biomarkers
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Fasting Glucose (mg/dL)</label>
+              <label className="block text-slate-600 font-medium mb-1">Fasting Glucose (mg/dL)</label>
               <input
                 type="number"
                 value={metabolic.fasting_glucose}
                 onChange={(e) => setMetabolic({ ...metabolic, fasting_glucose: parseFloat(e.target.value) || 0 })}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white font-mono"
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
               />
             </div>
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">HbA1c (%)</label>
+              <label className="block text-slate-600 font-medium mb-1">HbA1c (%)</label>
               <input
                 type="number"
                 step="0.1"
                 value={metabolic.hba1c}
                 onChange={(e) => setMetabolic({ ...metabolic, hba1c: parseFloat(e.target.value) || 0 })}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white font-mono"
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
               />
             </div>
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">hs-CRP (mg/L)</label>
+              <label className="block text-slate-600 font-medium mb-1">hs-CRP (mg/L)</label>
               <input
                 type="number"
                 step="0.1"
                 value={metabolic.hs_crp}
                 onChange={(e) => setMetabolic({ ...metabolic, hs_crp: parseFloat(e.target.value) || 0 })}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white font-mono"
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
               />
             </div>
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">eGFR (mL/min/1.73m²)</label>
+              <label className="block text-slate-600 font-medium mb-1">eGFR (mL/min/1.73m²)</label>
               <input
                 type="number"
                 value={metabolic.egfr}
                 onChange={(e) => setMetabolic({ ...metabolic, egfr: parseFloat(e.target.value) || 0 })}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white font-mono"
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
               />
             </div>
           </div>
         </div>
 
         {/* Section 3: Lipid Profile */}
-        <div className="clinical-card p-5 space-y-4">
-          <h2 className="text-sm font-bold text-white border-b border-slate-700/80 pb-2">
+        <div className="clinical-card p-5 space-y-3">
+          <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2">
             3. Lipid Profile
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Total Cholesterol (mg/dL)</label>
+              <label className="block text-slate-600 font-medium mb-1">Total Cholesterol (mg/dL)</label>
               <input
                 type="number"
                 value={lipids.total_cholesterol}
                 onChange={(e) => setLipids({ ...lipids, total_cholesterol: parseFloat(e.target.value) || 0 })}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white font-mono"
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
               />
             </div>
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">LDL Cholesterol (mg/dL)</label>
+              <label className="block text-slate-600 font-medium mb-1">LDL Cholesterol (mg/dL)</label>
               <input
                 type="number"
                 value={lipids.ldl_cholesterol}
                 onChange={(e) => setLipids({ ...lipids, ldl_cholesterol: parseFloat(e.target.value) || 0 })}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white font-mono"
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
               />
             </div>
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">HDL Cholesterol (mg/dL)</label>
+              <label className="block text-slate-600 font-medium mb-1">HDL Cholesterol (mg/dL)</label>
               <input
                 type="number"
                 value={lipids.hdl_cholesterol}
                 onChange={(e) => setLipids({ ...lipids, hdl_cholesterol: parseFloat(e.target.value) || 0 })}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white font-mono"
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
               />
             </div>
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Triglycerides (mg/dL)</label>
+              <label className="block text-slate-600 font-medium mb-1">Triglycerides (mg/dL)</label>
               <input
                 type="number"
                 value={lipids.triglycerides}
                 onChange={(e) => setLipids({ ...lipids, triglycerides: parseFloat(e.target.value) || 0 })}
-                className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-white font-mono"
+                className="w-full p-2 rounded bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:border-cyan-600"
               />
             </div>
           </div>
@@ -346,7 +345,7 @@ export const NewPredictionPage: React.FC<NewPredictionPageProps> = ({
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2.5 rounded text-xs font-semibold bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white flex items-center gap-2 transition-colors"
+            className="px-6 py-2.5 rounded text-xs font-semibold bg-cyan-700 hover:bg-cyan-800 disabled:opacity-50 text-white flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
           >
             <Cpu className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             <span>{loading ? 'Running Hybrid Pipeline...' : 'Run Risk Assessment'}</span>

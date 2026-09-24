@@ -50,7 +50,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-900 text-slate-100 font-sans">
+    <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-900 font-sans">
       {/* Sidebar Navigation */}
       <Sidebar
         currentTab={currentTab}
@@ -69,7 +69,7 @@ export const App: React.FC = () => {
           onNavigateToAlerts={() => setCurrentTab('alerts_review')}
         />
 
-        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-4 lg:p-6 bg-slate-900">
+        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-4 lg:p-6 bg-slate-50">
           <div className="w-full max-w-7xl mx-auto pb-12 min-w-0">
             {currentTab === 'overview' && (
               <DashboardPage

@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
-  Download,
   Search,
   RefreshCw,
   Check
@@ -15,8 +14,7 @@ import {
   fetchAlerts,
   acknowledgeAlert,
   triageAlert,
-  getReportPdfUrl,
-  getDoctorReportPdfUrl
+  getReportPdfUrl
 } from '../api';
 import { ALL_COHORT_ALERTS } from '../allAlertsData';
 import { MedicalDisclaimer } from '../components/MedicalDisclaimer';
@@ -88,29 +86,29 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onNavigateToDecision }) 
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <MedicalDisclaimer compact />
 
       {/* Header Toolbar */}
       <div className="clinical-card p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="clinical-badge bg-rose-500/20 text-rose-300 border border-rose-500/30">
+            <span className="text-xs font-bold uppercase tracking-wider text-rose-800 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
               CLINICAL TRIAGE QUEUE
             </span>
-            <span className="text-xs text-slate-400 font-mono">{ALL_COHORT_ALERTS.length} Active Records</span>
+            <span className="text-xs text-slate-500 font-mono">{ALL_COHORT_ALERTS.length} Active Notifications</span>
           </div>
-          <h1 className="text-xl font-bold text-white mt-1 tracking-tight">Clinical Alerts & Review Center</h1>
-          <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            Prioritized clinical notifications and physician review triage queue for evaluated patient records.
+          <h1 className="text-lg font-bold text-slate-900 mt-1 tracking-tight">Clinical Alerts & Review Center</h1>
+          <p className="text-xs text-slate-600 mt-0.5 max-w-2xl">
+            Prioritized clinical notification table and physician review triage queue for evaluated records.
           </p>
         </div>
 
         <div className="flex items-center gap-2 text-xs font-mono">
-          <div className="px-3 py-1 rounded bg-rose-500/10 border border-rose-500/30 text-rose-300">
+          <div className="px-3 py-1 rounded bg-rose-50 border border-rose-200 text-rose-800">
             <strong>{critCount} Critical</strong>
           </div>
-          <div className="px-3 py-1 rounded bg-amber-500/10 border border-amber-500/30 text-amber-300">
+          <div className="px-3 py-1 rounded bg-amber-50 border border-amber-200 text-amber-800">
             <strong>{highCount} High Risk</strong>
           </div>
         </div>
@@ -125,7 +123,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onNavigateToDecision }) 
             placeholder="Search by Patient ID or Reason..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-teal-500"
+            className="w-full pl-9 pr-3 py-2 rounded bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-cyan-600"
           />
         </div>
 
@@ -133,7 +131,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onNavigateToDecision }) 
           <select
             value={severityFilter}
             onChange={(e) => setSeverityFilter(e.target.value)}
-            className="px-3 py-2 rounded bg-slate-900 border border-slate-700 text-slate-200 text-xs font-medium"
+            className="px-3 py-2 rounded bg-slate-50 border border-slate-300 text-slate-800 text-xs font-medium"
           >
             <option value="ALL">All Severities</option>
             <option value="CRITICAL">Critical</option>
@@ -150,7 +148,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onNavigateToDecision }) 
               setSearchTerm('');
               loadAlerts();
             }}
-            className="px-3 py-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5 transition-colors"
+            className="px-3 py-2 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Reset</span>
@@ -159,12 +157,12 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onNavigateToDecision }) 
       </div>
 
       {actionSuccess && (
-        <div className="p-3 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
+        <div className="p-3 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             <span>{actionSuccess}</span>
           </div>
-          <button onClick={() => setActionSuccess(null)} className="text-emerald-400 hover:text-white">✕</button>
+          <button onClick={() => setActionSuccess(null)} className="text-emerald-700 hover:text-slate-900">✕</button>
         </div>
       )}
 
@@ -182,42 +180,42 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onNavigateToDecision }) 
                 <th className="clinical-table-header text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-slate-100">
               {displayedAlerts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400">
+                  <td colSpan={6} className="py-8 text-center text-slate-500">
                     No clinical alerts match current filter criteria.
                   </td>
                 </tr>
               ) : (
                 displayedAlerts.map((alt) => (
-                  <tr key={alt.alert_id} className="hover:bg-slate-800/60 transition-colors">
-                    <td className="clinical-table-cell font-bold font-mono text-white">{alt.record_id}</td>
+                  <tr key={alt.alert_id} className="hover:bg-slate-50 transition-colors">
+                    <td className="clinical-table-cell font-bold font-mono text-slate-900">{alt.record_id}</td>
                     <td className="clinical-table-cell">
                       <span
-                        className={`px-2 py-0.5 rounded text-[11px] font-semibold uppercase ${
+                        className={
                           alt.severity === 'CRITICAL'
-                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                            ? 'clinical-badge-high'
                             : alt.severity === 'HIGH'
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                            : 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
-                        }`}
+                            ? 'clinical-badge-high'
+                            : 'clinical-badge-moderate'
+                        }
                       >
                         {alt.severity}
                       </span>
                     </td>
-                    <td className="clinical-table-cell font-bold font-mono text-slate-200">
+                    <td className="clinical-table-cell font-bold font-mono text-slate-800">
                       {Math.round(alt.risk_score * 100)}%
                     </td>
-                    <td className="clinical-table-cell text-slate-300 max-w-md">
-                      <div className="line-clamp-1 font-medium">{alt.reason}</div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">{alt.recommendation}</div>
+                    <td className="clinical-table-cell text-slate-700 max-w-md">
+                      <div className="line-clamp-1 font-semibold">{alt.reason}</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">{alt.recommendation}</div>
                     </td>
                     <td className="clinical-table-cell">
                       <select
                         value={alt.status}
                         onChange={(e) => handleTriage(alt.alert_id, e.target.value)}
-                        className="px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-300 text-xs font-mono"
+                        className="px-2 py-1 rounded bg-slate-50 border border-slate-300 text-slate-800 text-xs font-mono focus:outline-none"
                       >
                         <option value="PENDING">PENDING</option>
                         <option value="REVIEWED">REVIEWED</option>
@@ -229,7 +227,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onNavigateToDecision }) 
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => onNavigateToDecision(alt.record_id)}
-                          className="px-2.5 py-1 rounded bg-teal-600 hover:bg-teal-500 text-white text-[11px] font-medium flex items-center gap-1 transition-colors"
+                          className="px-2.5 py-1 rounded bg-cyan-700 hover:bg-cyan-800 text-white text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                         >
                           <span>Open Case</span>
                           <ChevronRight className="w-3 h-3" />
@@ -237,12 +235,12 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onNavigateToDecision }) 
                         {!alt.acknowledged ? (
                           <button
                             onClick={() => handleAcknowledge(alt.alert_id)}
-                            className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium border border-slate-700 transition-colors"
+                            className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium border border-slate-300 transition-colors cursor-pointer"
                           >
                             Acknowledge
                           </button>
                         ) : (
-                          <span className="text-[11px] text-emerald-400 font-mono flex items-center gap-1">
+                          <span className="text-[11px] text-emerald-700 font-mono font-bold flex items-center gap-1">
                             <Check className="w-3 h-3" /> Ack'd
                           </span>
                         )}

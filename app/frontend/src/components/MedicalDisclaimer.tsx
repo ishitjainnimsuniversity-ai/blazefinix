@@ -8,19 +8,20 @@ interface MedicalDisclaimerProps {
 export const MedicalDisclaimer: React.FC<MedicalDisclaimerProps> = ({ compact = false }) => {
   if (compact) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">
-        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-        <span>AI-generated risk assessment — not a final medical diagnosis. Clinical review required.</span>
+      <div className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-amber-50 border border-amber-200 text-slate-800 text-xs font-medium shadow-xs">
+        <AlertCircle className="w-4 h-4 text-amber-800 shrink-0" />
+        <span className="font-bold text-amber-950">CLINICAL NOTICE:</span>
+        <span className="text-slate-800 font-medium">AI-generated risk assessment — not a final medical diagnosis. Clinical review required.</span>
       </div>
     );
   }
 
   return (
-    <div className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-900/90 border border-amber-500/30 text-slate-300 text-xs shadow-sm">
-      <ShieldAlert className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+    <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 border border-amber-200 text-slate-800 text-xs shadow-xs">
+      <ShieldAlert className="w-4 h-4 text-amber-800 mt-0.5 shrink-0" />
       <div>
-        <span className="font-semibold text-amber-300">CLINICAL DECISION-SUPPORT NOTICE: </span>
-        <span>
+        <span className="font-bold text-amber-950">CLINICAL DECISION-SUPPORT NOTICE: </span>
+        <span className="text-slate-800 font-medium">
           This software generates an AI-driven, research-grade risk assessment and does not produce a definitive medical diagnosis.
           All predictions, quantum probability outputs, and alert recommendations must be validated by a qualified healthcare professional before taking any clinical action.
         </span>
@@ -28,3 +29,4 @@ export const MedicalDisclaimer: React.FC<MedicalDisclaimerProps> = ({ compact = 
     </div>
   );
 };
+

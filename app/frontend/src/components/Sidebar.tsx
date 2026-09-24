@@ -3,7 +3,7 @@ import {
   LayoutDashboard,
   Stethoscope,
   PlusCircle,
-  BellRing,
+  Bell,
   FlaskConical,
   Atom,
   Database,
@@ -47,7 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'patients' as NavTab, label: 'Patients & Cohorts', icon: Users },
     { id: 'new_assessment' as NavTab, label: 'New Assessment', icon: PlusCircle },
     { id: 'decision_support' as NavTab, label: 'Decision Support', icon: Stethoscope },
-    { id: 'alerts_review' as NavTab, label: 'Alerts & Review', icon: BellRing, badge: pendingAlertsCount },
+    { id: 'alerts_review' as NavTab, label: 'Alerts & Review', icon: Bell, badge: pendingAlertsCount },
     { id: 'reports' as NavTab, label: 'Clinical Reports', icon: FileText },
   ];
 
@@ -60,22 +60,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside
-      className={`shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col h-screen select-none transition-all duration-300 ${
+      className={`shrink-0 bg-white border-r border-slate-200 flex flex-col h-screen select-none transition-all duration-200 ${
         isCollapsed ? 'w-16' : 'w-60 lg:w-64'
       }`}
     >
-      {/* Header / Brand */}
-      <div className="h-16 px-4 border-b border-slate-800 flex items-center justify-between">
-        <div className="flex items-center gap-3 overflow-hidden">
-          <div className="w-8 h-8 rounded-md bg-teal-600/20 border border-teal-500/30 flex items-center justify-center shrink-0">
-            <Activity className="w-4 h-4 text-teal-400" />
+      {/* Brand Header */}
+      <div className="h-14 px-4 border-b border-slate-200 flex items-center justify-between">
+        <div className="flex items-center gap-2.5 overflow-hidden">
+          <div className="w-7 h-7 rounded bg-cyan-700 flex items-center justify-center text-white shrink-0 shadow-sm">
+            <Activity className="w-4 h-4" />
           </div>
           {!isCollapsed && (
             <div className="min-w-0">
-              <div className="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
-                <span>BLAZEFINIX</span>
+              <div className="text-sm font-bold tracking-tight text-slate-900 truncate">
+                BLAZEFINIX
               </div>
-              <div className="text-[10px] text-slate-400 font-medium tracking-wide uppercase truncate">
+              <div className="text-[10px] text-slate-500 font-medium tracking-wide uppercase truncate">
                 Clinical Decision Support
               </div>
             </div>
@@ -85,7 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {onToggleCollapse && (
           <button
             onClick={onToggleCollapse}
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
             title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -93,18 +93,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* Navigation Sections */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-        {/* Clinical Workspace Section */}
+      {/* Navigation Links */}
+      <div className="flex-1 overflow-y-auto px-2 py-4 space-y-5">
+        {/* Clinical Section */}
         <div>
           {!isCollapsed ? (
-            <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Clinical Workspace
             </div>
           ) : (
-            <div className="h-2" />
+            <div className="h-1" />
           )}
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {clinicalItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentTab === item.id;
@@ -114,19 +114,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => onSelectTab(item.id)}
                   title={isCollapsed ? item.label : undefined}
                   className={`w-full flex items-center ${
-                    isCollapsed ? 'justify-center px-2 py-2.5' : 'justify-between px-3 py-2'
-                  } rounded-md text-xs font-medium transition-colors ${
+                    isCollapsed ? 'justify-center px-2 py-2' : 'justify-between px-3 py-2'
+                  } rounded text-xs font-medium transition-colors ${
                     isActive
-                      ? 'bg-teal-500/15 text-teal-300 border border-teal-500/30 font-semibold'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/80 border border-transparent'
+                      ? 'bg-cyan-50 text-cyan-800 font-semibold border-l-2 border-cyan-600'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
                   <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2.5'} min-w-0`}>
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-teal-400' : 'text-slate-400'}`} />
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-cyan-700' : 'text-slate-400'}`} />
                     {!isCollapsed && <span className="truncate text-left">{item.label}</span>}
                   </div>
                   {!isCollapsed && item.badge !== undefined && item.badge > 0 && (
-                    <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-rose-500/20 text-rose-400 border border-rose-500/30 shrink-0">
+                    <span className="px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-rose-100 text-rose-700 shrink-0">
                       {item.badge}
                     </span>
                   )}
@@ -136,16 +136,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* Research & Platform Section */}
+        {/* Research Section */}
         <div>
           {!isCollapsed ? (
-            <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Research & Platform
             </div>
           ) : (
-            <div className="h-2 border-t border-slate-800/60 my-2" />
+            <div className="h-1 border-t border-slate-200 my-2" />
           )}
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {researchItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentTab === item.id;
@@ -155,15 +155,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => onSelectTab(item.id)}
                   title={isCollapsed ? item.label : undefined}
                   className={`w-full flex items-center ${
-                    isCollapsed ? 'justify-center px-2 py-2.5' : 'justify-between px-3 py-2'
-                  } rounded-md text-xs font-medium transition-colors ${
+                    isCollapsed ? 'justify-center px-2 py-2' : 'justify-between px-3 py-2'
+                  } rounded text-xs font-medium transition-colors ${
                     isActive
-                      ? 'bg-teal-500/15 text-teal-300 border border-teal-500/30 font-semibold'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 border border-transparent'
+                      ? 'bg-cyan-50 text-cyan-800 font-semibold border-l-2 border-cyan-600'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
                   <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2.5'} min-w-0`}>
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-teal-400' : 'text-slate-400'}`} />
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-cyan-700' : 'text-slate-400'}`} />
                     {!isCollapsed && <span className="truncate text-left">{item.label}</span>}
                   </div>
                 </button>
@@ -173,19 +173,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* Footer Info / System Status */}
-      <div className="p-3 border-t border-slate-800 bg-slate-900/90">
+      {/* Footer System Status */}
+      <div className="p-3 border-t border-slate-200 bg-slate-50">
         {!isCollapsed ? (
           <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-400">System Status</span>
-            <span className="text-emerald-400 font-mono text-[11px] flex items-center gap-1.5 font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span className="text-slate-500 font-medium">System Status</span>
+            <span className="text-emerald-700 font-mono text-[11px] flex items-center gap-1.5 font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               ONLINE
             </span>
           </div>
         ) : (
           <div className="flex justify-center" title="System Status: ONLINE">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
           </div>
         )}
       </div>

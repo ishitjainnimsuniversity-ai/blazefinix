@@ -66,13 +66,13 @@ This document records the production verification of the public deployment at **
 
 ## 6. Vercel Architecture & Deployment Assessment
 
-### Technical Compatibility Findings:
-1. **Frontend Static SPA**: Vite static export (`app/frontend/dist`) runs efficiently on Vercel's Edge Network with zero errors.
-2. **Backend Serverless Constraints**:
-   - Heavy dependencies (`torch`, `pennylane`, `xgboost`, `scikit-learn`, `pymupdf`) total ~1.2 GB uncompressed. Vercel Serverless Function limit is **250 MB**.
-   - QML Circuit execution (50–200 optimization iterations) takes 15–45 seconds, exceeding Vercel standard serverless function timeouts.
-   - SQLite DB write persistence is unsupported on serverless read-only filesystems.
-3. **Execution Adapter Recommendation**: The dual-mode execution adapter (`REAL` when running locally, `DEMO` when on Vercel) is the optimal architectural pattern for public demo interactivity while maintaining complete honesty.
+### Technical & Architectural Distinction:
+- **Technically Possible in Principle**: Deploying FastAPI with Python Functions or Fluid Compute on Vercel or external container hosting platforms (Cloud Run / Render / AWS).
+- **Currently Deployed**: The current public deployment at `https://blazefinix.vercel.app` intentionally uses a lightweight static Demo Mode.
+- **Actually Tested**: Public Demo Mode on Vercel and local Real Mode backend on the local developer environment.
+
+### Deployment Rationale:
+The current public deployment intentionally uses a lightweight static Demo Mode. Although Vercel now supports larger Python Functions and longer-running workloads through Fluid Compute, the full BlazeFinix ML/QML pipeline has not been deployed to Vercel because its dependency footprint, model-loading requirements, computational workload, and runtime/resource characteristics have not yet been validated on Vercel.
 
 ---
 
@@ -107,7 +107,7 @@ Local backend verification was conducted by instantiating the FastAPI applicatio
 ```
 
 ### Result:
-- **Local REAL MODE backend is 100% operational.**
+- **Local REAL MODE backend passed the defined verification tests.**
 
 ---
 

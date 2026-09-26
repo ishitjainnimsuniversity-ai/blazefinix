@@ -38,24 +38,18 @@ Frontend (Vite / React)
 
 ---
 
-## 2. Serverless Feasibility & Blockers Audit
+## 2. Serverless Capability & Deployment Audit
 
-We conducted a technical evaluation of deploying the Python FastAPI backend on Vercel Python Functions vs using a client-side execution adapter.
+### Technical & Architectural Distinction:
+- **Technically Possible in Principle**: Deploying FastAPI with Python Functions or Fluid Compute on Vercel or external container hosting platforms (Cloud Run / Render / AWS).
+- **Currently Deployed**: The current public deployment at `https://blazefinix.vercel.app` intentionally uses a lightweight static Demo Mode.
+- **Actually Tested**: Public Demo Mode on Vercel and local Real Mode backend on the local developer environment.
 
-| Operational Vector | Technical Requirement | Vercel Python Function Capability | Audit Conclusion |
-|---|---|---|---|
-| **API Server Routing** | FastAPI / ASGI application | Supported via `@vercel/python` / WSGI | Feasible for lightweight endpoints |
-| **Package Size** | `torch`, `pennylane`, `xgboost`, `scikit-learn`, `pymupdf` (~1.2 GB) | Vercel Serverless Function limit: **250MB (uncompressed)** | ❌ **BLOCKER**: Python QML & PyTorch dependencies exceed bundle limits |
-| **Execution Time** | QML Circuit optimization (50-200 iterations: 15-45s) | Vercel standard serverless timeout: **10-60s max** | ❌ **BLOCKER**: Heavy QML training times out on free/pro serverless tiers |
-| **Model Weight Storage** | Pre-trained `.pkl` / `.pt` files (~400MB) | Ephemeral disk, 250MB bundle limit | ❌ **BLOCKER**: Storage quota exceeded |
-| **Filesystem & State** | SQLite database (`blazefinix.db`), PDF file generation | Ephemeral filesystem (`/tmp` read-only root) | ⚠️ Requires external cloud DB & storage (S3/Cloudinary) |
-| **Native C/C++ Extensions** | `PennyLane-Lightning` quantum C++ simulator extensions | Requires pre-compiled Linux x86_64 wheels | ⚠️ High risk of binary incompatibility |
+### Deployment Rationale:
+The current public deployment intentionally uses a lightweight static Demo Mode. Although Vercel now supports larger Python Functions and longer-running workloads through Fluid Compute, the full BlazeFinix ML/QML pipeline has not been deployed to Vercel because its dependency footprint, model-loading requirements, computational workload, and runtime/resource characteristics have not yet been validated on Vercel.
 
-### Audit Verdict:
-While lightweight FastAPI routes can run on Vercel, **executing live multi-qubit PennyLane QML circuits, training XGBoost/Ensemble models, and persisting SQLite state exceed Vercel serverless platform constraints.**
-
-Therefore, the system MUST implement a dual-mode architecture:
-1. **REAL MODE** when hosted locally or on a dedicated Python container (e.g. Docker / Render / Cloud Run / local dev).
+Therefore, the system implements a dual-mode architecture:
+1. **REAL MODE** when hosted locally or on a dedicated Python environment / container.
 2. **DEMO MODE** when hosted on Vercel or when real backend endpoints are unreachable.
 
 ---

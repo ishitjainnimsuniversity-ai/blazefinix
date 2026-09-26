@@ -13,9 +13,9 @@ BlazeFinix has been updated with a capability-aware **Demonstration Execution Ar
 
 ---
 
-## 2. Root Cause of Previous Vercel Failures
-1. **Routing & Serverless Configuration**: `vercel.json` configured Vercel as a Vite static SPA without declaring a Vercel Python Function serverless endpoint. Requests to `/api/*` were rewritten to `/index.html` (HTML text), causing JSON parse errors (`Unexpected token '<'`).
-2. **Serverless Heavy Constraints**: Heavy Python ML libraries (`torch`, `pennylane`, `xgboost`, `scikit-learn`, `pymupdf`), pre-trained model artifacts (~400MB), and multi-qubit PennyLane quantum simulators exceed Vercel's 250MB serverless bundle limit and 10-60s function execution timeouts.
+## 2. Public Deployment Rationale
+1. **Routing & Serverless Configuration**: `vercel.json` configures Vercel as a Vite static SPA without a Python Function serverless entrypoint. Requests to `/api/*` return 404 text, triggering the client-side `ExecutionAdapter`.
+2. **Deployment Rationale**: The current public deployment intentionally uses a lightweight static Demo Mode. Although Vercel now supports larger Python Functions and longer-running workloads through Fluid Compute, the full BlazeFinix ML/QML pipeline has not been deployed to Vercel because its dependency footprint, model-loading requirements, computational workload, and runtime/resource characteristics have not yet been validated on Vercel.
 
 ---
 

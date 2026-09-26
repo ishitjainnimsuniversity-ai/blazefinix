@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar, NavTab } from './components/Sidebar';
 import { Header } from './components/Header';
+import { DemoInfoModal } from './components/DemoInfoModal';
 import { DashboardPage } from './pages/DashboardPage';
 import { ClinicalDecisionPage } from './pages/ClinicalDecisionPage';
 import { ModelLabPage } from './pages/ModelLabPage';
@@ -12,8 +13,9 @@ import { AuditLogsPage } from './pages/AuditLogsPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { CancerGenomicsPage } from './pages/CancerGenomicsPage';
-import { fetchAlerts } from './api';
+import { fetchAlerts, checkCapabilities, SystemCapabilities } from './api';
 import { PredictionResult } from './types';
+import { Info } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<NavTab>('overview');
@@ -21,12 +23,24 @@ export const App: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [pendingAlertsCount, setPendingAlertsCount] = useState<number>(0);
   const [selectedRecordId, setSelectedRecordId] = useState<string | undefined>(undefined);
+  const [capabilities, setCapabilities] = useState<SystemCapabilities | null>(null);
+  const [isDemoInfoOpen, setIsDemoInfoOpen] = useState<boolean>(false);
 
   useEffect(() => {
+    loadCapabilities();
     refreshAlertCount();
     const interval = setInterval(refreshAlertCount, 15000);
     return () => clearInterval(interval);
   }, []);
+
+  async function loadCapabilities() {
+    try {
+      const caps = await checkCapabilities();
+      setCapabilities(caps);
+    } catch {
+      // Fallback
+    }
+  }
 
   async function refreshAlertCount() {
     try {
@@ -66,9 +80,31 @@ export const App: React.FC = () => {
         <Header
           pendingAlertsCount={pendingAlertsCount}
           selectedRecordId={selectedRecordId}
+          capabilities={capabilities}
           onNavigateToAlerts={() => setCurrentTab('alerts_review')}
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          onOpenDemoInfo={() => setIsDemoInfoOpen(true)}
         />
+
+        {/* Demo Mode Disclosure Banner */}
+        {capabilities?.mode === 'demo' && (
+          <div className="bg-amber-500/10 border-b border-amber-300/60 px-4 py-2 text-xs text-amber-950 flex flex-wrap items-center justify-between gap-2 shrink-0 backdrop-blur-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-200/80 text-amber-900 rounded border border-amber-400/50 shrink-0">
+                DEMONSTRATION MODE — PUBLIC DEPLOYMENT
+              </span>
+              <span className="text-[11px] sm:text-[12px] text-amber-900 font-medium truncate">
+                Hosted demo uses simulated results because full local ML/QML pipeline is not deployed on Vercel. Underlying system is implemented and executable locally.
+              </span>
+            </div>
+            <button
+              onClick={() => setIsDemoInfoOpen(true)}
+              className="text-cyan-800 font-bold text-[11px] underline hover:text-cyan-900 shrink-0 cursor-pointer"
+            >
+              System Info & Architecture
+            </button>
+          </div>
+        )}
 
         <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-4 lg:p-6 bg-slate-50">
           <div className="w-full max-w-7xl mx-auto pb-12 min-w-0">
@@ -114,6 +150,14 @@ export const App: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {/* Demo Info Modal */}
+      <DemoInfoModal
+        isOpen={isDemoInfoOpen}
+        capabilities={capabilities}
+        onClose={() => setIsDemoInfoOpen(false)}
+        onRefresh={loadCapabilities}
+      />
     </div>
   );
 };

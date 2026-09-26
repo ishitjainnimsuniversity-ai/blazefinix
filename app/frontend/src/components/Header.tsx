@@ -1,19 +1,26 @@
 import React from 'react';
-import { Bell, Activity, User, Menu } from 'lucide-react';
+import { Bell, Activity, User, Menu, ShieldCheck, Sparkles, AlertCircle } from 'lucide-react';
+import { SystemCapabilities } from '../api';
 
 interface HeaderProps {
   pendingAlertsCount: number;
   selectedRecordId?: string;
+  capabilities?: SystemCapabilities | null;
   onNavigateToAlerts?: () => void;
   onToggleMobileMenu?: () => void;
+  onOpenDemoInfo?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   pendingAlertsCount,
   selectedRecordId,
+  capabilities,
   onNavigateToAlerts,
-  onToggleMobileMenu
+  onToggleMobileMenu,
+  onOpenDemoInfo
 }) => {
+  const isReal = capabilities?.mode === 'real';
+
   return (
     <header className="h-14 px-4 sm:px-6 bg-white border-b border-slate-200 flex items-center justify-between sticky top-0 z-30 shrink-0">
       {/* Left: Mobile Menu & Active Context */}
@@ -44,11 +51,21 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right Actions */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        {/* System Backend Status */}
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 font-medium">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-          <span className="text-[11px]">Backend Online</span>
-        </div>
+        {/* Dynamic Execution Mode Status Badge */}
+        <button
+          onClick={onOpenDemoInfo}
+          className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border transition-colors cursor-pointer ${
+            isReal
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100'
+              : 'bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100'
+          }`}
+          title="Click to view execution mode and system capabilities"
+        >
+          <span className={`w-2 h-2 rounded-full ${isReal ? 'bg-emerald-600 animate-pulse' : 'bg-amber-500'}`} />
+          <span className="text-[11px] font-bold">
+            {isReal ? 'Real Pipeline Active' : 'Demonstration Mode'}
+          </span>
+        </button>
 
         {/* Alerts Notification Button */}
         <button

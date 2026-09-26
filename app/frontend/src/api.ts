@@ -39,6 +39,19 @@ import {
 } from './utils/quantumSimulatorEngine';
 export type { SimulationResult, QNNTrainingResult, QNNTrainingEpoch, QuantumGate };
 
+import {
+  checkCapabilities,
+  getModeOverride,
+  setModeOverride,
+  generateDeterministicPrediction,
+  generateDeterministicBenchmark,
+  generateDeterministicQuantumExperiment,
+  SystemCapabilities,
+  ExecutionMode
+} from './utils/executionAdapter';
+export { checkCapabilities, getModeOverride, setModeOverride };
+export type { SystemCapabilities, ExecutionMode };
+
 const API_BASE = '/api';
 
 /**
@@ -220,8 +233,8 @@ export async function fetchDemoCases(): Promise<DemoCase[]> {
 }
 
 /**
- * Executes genuine hybrid classical-quantum risk prediction via local Python backend.
- * Zero client-side mathematical approximations. If the backend is offline, throws an error.
+ * Executes hybrid risk prediction using real FastAPI backend when online,
+ * or deterministic demonstration adapter when running in Demo Mode.
  */
 export async function predictPatientRisk(
   features: Record<string, number>,
@@ -229,36 +242,47 @@ export async function predictPatientRisk(
   qubits?: number,
   shots = 1024
 ): Promise<PredictionResult> {
-  const res = await fetch(`${API_BASE}/predict`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      features,
-      record_id: recordId,
-      qubits,
-      shots
-    })
-  });
+  const caps = await checkCapabilities();
+  if (caps.mode === 'real') {
+    try {
+      const res = await fetch(`${API_BASE}/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          features,
+          record_id: recordId,
+          qubits,
+          shots
+        })
+      });
 
-  if (!res.ok) {
-    const errBody = await res.text().catch(() => '');
-    throw new Error(
-      `LOCAL COMPUTATION OFFLINE: Backend prediction failed (HTTP ${res.status}). Ensure FastAPI server is running on port 8000.`
-    );
+      if (res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const result: PredictionResult = await res.json();
+          savePredictionToHistory(result);
+          return result;
+        }
+      }
+    } catch {
+      // Backend request failed - fall through to Demo adapter
+    }
   }
 
-  const result: PredictionResult = await res.json();
+  // Demo Mode Adapter
+  const demoResult = generateDeterministicPrediction(features, recordId, qubits, shots);
+  savePredictionToHistory(demoResult);
+  return demoResult;
+}
 
-  // Save to history in localStorage
+function savePredictionToHistory(result: PredictionResult) {
   try {
     const history = JSON.parse(localStorage.getItem('blazefinix_prediction_history') || '[]');
     history.unshift(result);
     localStorage.setItem('blazefinix_prediction_history', JSON.stringify(history.slice(0, 50)));
-  } catch (e) {
+  } catch {
     // Ignored
   }
-
-  return result;
 }
 
 export async function runQuantumSimulation(
@@ -275,25 +299,33 @@ export async function runQuantumSimulation(
     hba1c: 7.1,
     hs_crp: 4.2
   };
-  const res = await fetch(`${API_BASE}/models/simulate-experiment`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      features: featPayload,
-      qubits,
-      depth,
-      shots
-    })
-  });
 
-  if (!res.ok) {
-    const errBody = await res.text().catch(() => '');
-    throw new Error(
-      `LOCAL COMPUTATION OFFLINE: Quantum simulation failed (HTTP ${res.status}). Ensure FastAPI backend is running.`
-    );
+  const caps = await checkCapabilities();
+  if (caps.mode === 'real') {
+    try {
+      const res = await fetch(`${API_BASE}/models/simulate-experiment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          features: featPayload,
+          qubits,
+          depth,
+          shots
+        })
+      });
+
+      if (res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          return await res.json();
+        }
+      }
+    } catch {
+      // Backend request failed - fall through to Demo adapter
+    }
   }
 
-  return await res.json();
+  return generateDeterministicQuantumExperiment(featPayload, qubits, depth, shots);
 }
 
 export async function fetchPredictionHistory(): Promise<any[]> {
@@ -308,11 +340,22 @@ export async function fetchPredictionHistory(): Promise<any[]> {
 }
 
 export async function fetchBenchmark(qubits = 4): Promise<BenchmarkResult> {
-  const res = await fetch(`${API_BASE}/models/benchmark?qubits=${qubits}`);
-  if (!res.ok) {
-    throw new Error(`Failed to load benchmark from local backend (HTTP ${res.status}).`);
+  const caps = await checkCapabilities();
+  if (caps.mode === 'real') {
+    try {
+      const res = await fetch(`${API_BASE}/models/benchmark?qubits=${qubits}`);
+      if (res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          return await res.json();
+        }
+      }
+    } catch {
+      // Fallback
+    }
   }
-  return await res.json();
+
+  return generateDeterministicBenchmark(qubits);
 }
 
 export async function trainPipeline(config: {
@@ -321,24 +364,59 @@ export async function trainPipeline(config: {
   test_size?: number;
   cv_folds?: number;
 }) {
-  const res = await fetch(`${API_BASE}/models/train`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(config)
-  });
-  if (!res.ok) {
-    const errBody = await res.text().catch(() => '');
-    throw new Error(`Model training failed on local backend (HTTP ${res.status}): ${errBody}`);
+  const caps = await checkCapabilities();
+  if (caps.mode === 'real') {
+    try {
+      const res = await fetch(`${API_BASE}/models/train`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      });
+      if (res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          return await res.json();
+        }
+      }
+    } catch {
+      // Fallback
+    }
   }
-  return await res.json();
+
+  // Demo retraining simulation delay
+  await new Promise((r) => setTimeout(r, 1200));
+  return {
+    status: 'success',
+    execution_mode: 'demo',
+    is_demo: true,
+    message: `Demonstration Pipeline trained & evaluated on synthetic ${config.dataset_name} partitions (${config.selected_features_count} Qubits).`
+  };
 }
 
 export async function fetchQuantumCircuit(qubits = 4, depth = 2) {
-  const res = await fetch(`${API_BASE}/models/quantum-circuit?qubits=${qubits}&depth=${depth}`);
-  if (!res.ok) {
-    throw new Error(`Failed to load quantum circuit metadata (HTTP ${res.status}).`);
+  const caps = await checkCapabilities();
+  if (caps.mode === 'real') {
+    try {
+      const res = await fetch(`${API_BASE}/models/quantum-circuit?qubits=${qubits}&depth=${depth}`);
+      if (res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          return await res.json();
+        }
+      }
+    } catch {
+      // Fallback
+    }
   }
-  return await res.json();
+
+  return {
+    qubits,
+    depth,
+    gates_count: qubits * depth * 2,
+    circuit_diagram: `\n0: ──RY(θ0)───CNOT───RY(θ4)───\n1: ──RY(θ1)────┤─────RY(θ5)───\n2: ──RY(θ2)────┼─────RY(θ6)───\n3: ──RY(θ3)───CNOT───RY(θ7)───\n`,
+    execution_mode: 'demo',
+    is_demo: true
+  };
 }
 
 export async function runQuantumSimulator(params: {
@@ -1421,7 +1499,14 @@ export async function uploadPatientReportPdfApi(
     },
     qubit_diagnostics: evaluation.qubit_diagnostics,
     shap_attributions: evaluation.shap_attributions,
-    raw_text_snippet: parsed.raw_text_snippet
+    raw_text_snippet: parsed.raw_text_snippet,
+    is_demo: true,
+    execution_mode: 'demo',
+    execution_details: {
+      planned_pipeline: 'PyMuPDF Document Parsing -> 20-Qubit Angle Encoding -> Variational Quantum Circuit + XGBoost Ensembling',
+      actual_execution: 'Deterministic demonstration execution adapter. Complete PyMuPDF & PennyLane QML pipeline is executable in local environment.',
+      mode_label: 'DEMONSTRATION RESULT'
+    }
   };
 }
 

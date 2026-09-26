@@ -88,7 +88,7 @@ export function normalizePredictionObject(data: any, fallbackId: string): Predic
   return {
     prediction_id: data.prediction_id || data.report_id || `PRED-${recId}`,
     record_id: recId,
-    model_version: data.model_version || m.model_version || 'Hybrid-VQC-v4Q',
+    model_version: data.model_version || m.model_version || 'Hybrid-VQC-v4Q (Demo Adapter)',
     classical_risk: isNaN(classicalRisk) ? 0.90 : classicalRisk,
     quantum_risk: isNaN(quantumRisk) ? 0.80 : quantumRisk,
     hybrid_risk: isNaN(hybridRisk) ? 0.85 : hybridRisk,
@@ -98,8 +98,15 @@ export function normalizePredictionObject(data: any, fallbackId: string): Predic
     contributing_factors: factors,
     explanation_summary: data.explanation_summary || exp.summary || exp.explanation_summary || 'Clinical decision support assessment completed.',
     recommendation,
-    disclaimer: data.disclaimer || 'Educational and clinical decision-support only.',
+    disclaimer: data.disclaimer || 'DEMONSTRATION RESULT — Hosted public demo uses simulated execution.',
     timestamp: data.timestamp || alt.created_at || new Date().toISOString(),
+    is_demo: data.is_demo ?? true,
+    execution_mode: data.execution_mode || 'demo',
+    execution_details: data.execution_details || {
+      planned_pipeline: 'Classical Feature Normalization -> XGBoost Ensembling -> 4-Qubit Variational Quantum Circuit (Angle Embedding + Entanglement) -> Hybrid Fusion',
+      actual_execution: 'Deterministic demonstration execution adapter. Complete PennyLane QML & Python FastAPI server executable in local environment.',
+      mode_label: 'DEMONSTRATION RESULT'
+    },
     alert: (alt.alert_id || alt.severity) ? {
       alert_id: alt.alert_id || `ALT-${recId}`,
       record_id: recId,
@@ -491,23 +498,42 @@ export const ClinicalDecisionPageContent: React.FC<ClinicalDecisionPageProps> = 
             </button>
 
             {showTechnicalDetails && (
-              <div className="mt-4 pt-4 border-t border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                <div className="p-3 rounded bg-slate-50 border border-slate-200">
-                  <div className="text-slate-500 text-[11px]">Classical Model</div>
-                  <div className="font-mono text-slate-900 font-bold mt-1">XGBoost (Top Features)</div>
-                  <div className="text-slate-500 text-[11px] mt-1">Score: {(prediction.classical_risk * 100).toFixed(1)}%</div>
+              <div className="mt-4 pt-4 border-t border-slate-200 space-y-3 text-xs">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="p-3 rounded bg-slate-50 border border-slate-200">
+                    <div className="text-slate-500 text-[11px] font-medium">Classical Pipeline</div>
+                    <div className="font-mono text-slate-900 font-bold mt-1">XGBoost + Random Forest</div>
+                    <div className="text-slate-500 text-[11px] mt-1">Estimator Risk: {(prediction.classical_risk * 100).toFixed(1)}%</div>
+                  </div>
+
+                  <div className="p-3 rounded bg-slate-50 border border-slate-200">
+                    <div className="text-slate-500 text-[11px] font-medium">Quantum Layer (VQC)</div>
+                    <div className="font-mono text-slate-900 font-bold mt-1">PennyLane 4-Qubit Simulator</div>
+                    <div className="text-slate-500 text-[11px] mt-1">Quantum Risk: {(prediction.quantum_risk * 100).toFixed(1)}%</div>
+                  </div>
+
+                  <div className="p-3 rounded bg-slate-50 border border-slate-200">
+                    <div className="text-slate-500 text-[11px] font-medium">Execution Environment</div>
+                    <div className={`font-mono font-bold mt-1 ${prediction.is_demo ? 'text-amber-800' : 'text-emerald-800'}`}>
+                      {prediction.is_demo ? 'Demonstration Mode' : 'Local FastAPI Backend'}
+                    </div>
+                    <div className="text-slate-500 text-[11px] mt-1 truncate">Model: {prediction.model_version}</div>
+                  </div>
                 </div>
 
-                <div className="p-3 rounded bg-slate-50 border border-slate-200">
-                  <div className="text-slate-500 text-[11px]">Quantum Circuit (VQC)</div>
-                  <div className="font-mono text-slate-900 font-bold mt-1">4-Qubit Variational Classifier</div>
-                  <div className="text-slate-500 text-[11px] mt-1">Score: {(prediction.quantum_risk * 100).toFixed(1)}%</div>
-                </div>
-
-                <div className="p-3 rounded bg-slate-50 border border-slate-200">
-                  <div className="text-slate-500 text-[11px]">Execution Backend</div>
-                  <div className="font-mono text-emerald-800 font-bold mt-1">Qiskit AerSimulator (Local)</div>
-                  <div className="text-slate-500 text-[11px] mt-1">Model: {prediction.model_version}</div>
+                <div className={`p-3 rounded border font-sans text-xs ${
+                  prediction.is_demo ? 'bg-amber-50 border-amber-200 text-amber-950' : 'bg-slate-50 border-slate-200 text-slate-800'
+                }`}>
+                  <div className="font-bold mb-1 flex items-center justify-between">
+                    <span>Pipeline Provenance & Execution Details:</span>
+                    <span className="font-mono text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-amber-100 border border-amber-300 text-amber-900">
+                      {prediction.execution_mode === 'demo' || prediction.is_demo ? 'Demonstration Mode' : 'Real Execution'}
+                    </span>
+                  </div>
+                  <div className="text-[11px] space-y-0.5">
+                    <div><strong>Planned Pipeline:</strong> {prediction.execution_details?.planned_pipeline || 'Classical Feature Preprocessing -> XGBoost -> Variational Quantum Circuit (PennyLane VQC) -> Hybrid Fusion'}</div>
+                    <div><strong>Actual Execution:</strong> {prediction.execution_details?.actual_execution || 'Deterministic demonstration execution adapter. Complete hybrid pipeline executable in local environment.'}</div>
+                  </div>
                 </div>
               </div>
             )}

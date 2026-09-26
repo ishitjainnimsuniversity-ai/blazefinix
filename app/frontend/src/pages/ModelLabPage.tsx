@@ -21,6 +21,7 @@ export const ModelLabPage: React.FC = () => {
   const [topK, setTopK] = useState(4);
   const [datasetName, setDatasetName] = useState('cardiometabolic_cohort.csv');
   const [trainingMessage, setTrainingMessage] = useState<string | null>(null);
+  const [trainingError, setTrainingError] = useState<string | null>(null);
 
   useEffect(() => {
     loadBenchmark();
@@ -29,7 +30,7 @@ export const ModelLabPage: React.FC = () => {
   async function loadBenchmark() {
     setLoading(true);
     try {
-      const data = await fetchBenchmark();
+      const data = await fetchBenchmark(topK);
       setBenchmark(data);
     } catch (err) {
       console.error('Failed to load benchmark:', err);
@@ -42,17 +43,22 @@ export const ModelLabPage: React.FC = () => {
     e.preventDefault();
     setRetraining(true);
     setTrainingMessage(null);
+    setTrainingError(null);
     try {
-      await trainPipeline({
+      const res = await trainPipeline({
         dataset_name: datasetName,
         selected_features_count: topK,
         cv_folds: 5
       });
-      setTrainingMessage('Research pipeline trained and evaluated on fresh cross-validation splits.');
+      if (res && res.message) {
+        setTrainingMessage(res.message);
+      } else {
+        setTrainingMessage('Research pipeline trained and evaluated on fresh cross-validation splits.');
+      }
       await loadBenchmark();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setTrainingMessage('Training failed: Verify dataset structure.');
+      setTrainingError(err?.message || 'Benchmark execution failed. Check backend connectivity or dataset structure.');
     } finally {
       setRetraining(false);
     }
@@ -65,11 +71,17 @@ export const ModelLabPage: React.FC = () => {
       {/* Header & Controls */}
       <div className="clinical-card p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-cyan-800 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
               RESEARCH BENCHMARK LAB
             </span>
-            <span className="text-xs text-slate-500">Strict Identical Split Evaluation</span>
+            {benchmark?.is_demo ? (
+              <span className="text-xs font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded">
+                DEMONSTRATION BENCHMARK
+              </span>
+            ) : (
+              <span className="text-xs text-slate-500">Strict Identical Split Evaluation</span>
+            )}
           </div>
           <h1 className="text-lg font-bold text-slate-900 mt-1 tracking-tight">
             Classical vs Quantum vs Hybrid Benchmark Suite
@@ -119,9 +131,29 @@ export const ModelLabPage: React.FC = () => {
         </form>
       </div>
 
-      {trainingMessage && (
-        <div className="p-3 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+      {/* Error Message Display with Rose Red Styling */}
+      {trainingError && (
+        <div className="p-3.5 rounded bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-start gap-2.5">
+          <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+          <div>
+            <strong className="font-bold text-rose-950">EXECUTION ERROR: </strong>
+            <span>{trainingError}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Success or Demo Notice Display */}
+      {trainingMessage && !trainingError && (
+        <div className={`p-3.5 rounded text-xs flex items-center gap-2.5 border ${
+          benchmark?.is_demo
+            ? 'bg-amber-50 border-amber-300 text-amber-950'
+            : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+        }`}>
+          {benchmark?.is_demo ? (
+            <Info className="w-4 h-4 text-amber-600 shrink-0" />
+          ) : (
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          )}
           <span>{trainingMessage}</span>
         </div>
       )}

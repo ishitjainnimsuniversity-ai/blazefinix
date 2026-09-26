@@ -67,6 +67,13 @@ export interface PredictionResult {
   disclaimer: string;
   timestamp: string;
   features?: Record<string, number>;
+  is_demo?: boolean;
+  execution_mode?: 'real' | 'demo';
+  execution_details?: {
+    planned_pipeline: string;
+    actual_execution: string;
+    mode_label: string;
+  };
 }
 
 export interface SimulationExperimentResult {
@@ -138,6 +145,8 @@ export interface BenchmarkResult {
   classical_baseline: any;
   quantum_vqc: any;
   hybrid: any;
+  is_demo?: boolean;
+  execution_mode?: 'real' | 'demo';
 }
 
 export interface DataQualityAudit {

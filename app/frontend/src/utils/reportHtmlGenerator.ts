@@ -261,6 +261,12 @@ export function generateClinicalReportHtml(data: any): string {
   </style>
 </head>
 <body>
+  <div style="background:#fef3c7; border:1px solid #fcd34d; padding:10px 14px; border-radius:6px; margin-bottom:18px; font-size:12px; color:#78350f;">
+    <strong style="font-size:12.5px; color:#92400e; text-transform:uppercase;">DEMONSTRATION REPORT — PUBLIC DEPLOYMENT</strong><br/>
+    <strong>Execution Mode:</strong> Demonstration / Simulation Adapter &nbsp;|&nbsp; 
+    <strong>Notice:</strong> This report represents a software demonstration for workflow evaluation and is not a clinical diagnosis. Complete classical ML & PennyLane QML pipeline is executable in local environment.
+  </div>
+
   <div class="header">
     <div>
       <div class="title">
@@ -268,8 +274,8 @@ export function generateClinicalReportHtml(data: any): string {
       </div>
       <div class="meta">
         <strong>${isModel ? 'Model Identifier' : 'Record Identifier'}:</strong> ${data.record_id} &nbsp;|&nbsp; 
-        <strong>Model Pipeline:</strong> ${m.model_version || 'Hybrid-QML-v1.0'} &nbsp;|&nbsp; 
-        <strong>Generated:</strong> 2026-09-14
+        <strong>Model Pipeline:</strong> ${m.model_version || 'Hybrid-QML-v1.0 (Demo Adapter)'} &nbsp;|&nbsp; 
+        <strong>Generated:</strong> ${new Date().toLocaleDateString()}
       </div>
       <div class="meta">
         <strong>Cohort / Category:</strong> ${d.cohort || 'Clinical Cohort'} 

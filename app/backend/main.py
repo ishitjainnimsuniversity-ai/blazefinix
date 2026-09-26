@@ -88,6 +88,20 @@ def health_check():
         "is_model_trained": pipeline_service.is_trained
     }
 
+@app.get("/api/capabilities")
+def get_capabilities():
+    return {
+        "mode": "real",
+        "inference": True,
+        "training": True,
+        "quantum": True,
+        "reports": True,
+        "vision": True,
+        "genomics": True,
+        "message": "Full local classical ML and PennyLane QML backend active."
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.backend.main:app", host="0.0.0.0", port=8000, reload=False)
